@@ -18,6 +18,5 @@
     "dependencies",
     "templates",
     "markdown-export"
-  ],
-  "hooks": "./hooks/hooks.json"
+  ]
 }
