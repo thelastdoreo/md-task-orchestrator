@@ -33,6 +33,13 @@ FROM amazoncorretto:25-al2023-headless
 
 WORKDIR /app
 
+# Create non-root user with configurable UID/GID (default 1000:1000)
+# Override at build time: docker build --build-arg APP_UID=1001 --build-arg APP_GID=1001
+ARG APP_UID=1000
+ARG APP_GID=1000
+RUN groupadd -g ${APP_GID} appuser && \
+    useradd -u ${APP_UID} -g ${APP_GID} -m -s /bin/bash appuser
+
 # Copy the built JAR from the builder stage
 COPY --from=builder /app/build/libs/mcp-task-orchestrator-*.jar /app/orchestrator.jar
 
@@ -42,11 +49,17 @@ COPY --from=builder /app/docs /app/docs
 # Volume for the SQLite database and configuration
 VOLUME /app/data
 
+# Ensure app user owns the working directory
+RUN chown -R appuser:appuser /app
+
 # Environment variables for configuration
 ENV DATABASE_PATH=/app/data/tasks.db
 ENV MCP_TRANSPORT=stdio
 ENV LOG_LEVEL=info
 ENV USE_FLYWAY=true
+
+# Run as non-root user
+USER appuser
 
 # Run the application with explicit stdio handling
 # --enable-native-access=ALL-UNNAMED: Required for SQLite JDBC native library loading in Java 25+
