@@ -55,6 +55,7 @@ snakeyaml = { module = "org.yaml:snakeyaml", version.ref = "snakeyaml" }
 
 # Testing
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test" }
+kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinCoroutines" }
 mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
 junit-api = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "junit" }
 junit-engine = { module = "org.junit.jupiter:junit-jupiter-engine", version.ref = "junit" }

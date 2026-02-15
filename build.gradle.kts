@@ -74,6 +74,7 @@ dependencies {
 
     // Testing
     testImplementation(libs.kotlin.test)
+    testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.mockk)
     testImplementation(libs.junit.api)
     testImplementation(libs.junit.params)

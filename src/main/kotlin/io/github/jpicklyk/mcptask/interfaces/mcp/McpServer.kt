@@ -26,7 +26,11 @@ import io.github.jpicklyk.mcptask.application.tools.status.GetNextStatusTool
 import io.github.jpicklyk.mcptask.application.tools.template.ApplyTemplateTool
 import io.github.jpicklyk.mcptask.application.tools.template.ManageTemplateTool
 import io.github.jpicklyk.mcptask.application.tools.agent.*
+import io.github.jpicklyk.mcptask.domain.rendering.MarkdownRenderer
 import io.github.jpicklyk.mcptask.infrastructure.database.DatabaseManager
+import io.github.jpicklyk.mcptask.infrastructure.export.ExportAwareRepositoryProvider
+import io.github.jpicklyk.mcptask.infrastructure.export.MarkdownExportConfig
+import io.github.jpicklyk.mcptask.infrastructure.export.MarkdownExportServiceImpl
 import io.github.jpicklyk.mcptask.infrastructure.repository.DefaultRepositoryProvider
 import io.github.jpicklyk.mcptask.infrastructure.repository.RepositoryProvider
 import io.github.jpicklyk.mcptask.interfaces.mcp.McpServerAiGuidance.configureAiGuidance
@@ -36,7 +40,10 @@ import io.modelcontextprotocol.kotlin.sdk.ServerCapabilities
 import io.modelcontextprotocol.kotlin.sdk.server.Server
 import io.modelcontextprotocol.kotlin.sdk.server.ServerOptions
 import io.modelcontextprotocol.kotlin.sdk.server.StdioServerTransport
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.runBlocking
 import kotlinx.io.asSink
 import kotlinx.io.asSource
@@ -74,7 +81,20 @@ class McpServer(
         initializeDatabase()
 
         // Initialize repository provider
-        repositoryProvider = DefaultRepositoryProvider(databaseManager)
+        val baseProvider: RepositoryProvider = DefaultRepositoryProvider(databaseManager)
+
+        // Conditionally wrap with export-aware decorators for markdown auto-export
+        repositoryProvider = if (MarkdownExportConfig.isEnabled()) {
+            val vaultPath = MarkdownExportConfig.vaultPath
+            logger.info("Markdown auto-export enabled. Vault path: {}", vaultPath)
+            val markdownRenderer = MarkdownRenderer()
+            val exportService = MarkdownExportServiceImpl(baseProvider, markdownRenderer, vaultPath)
+            val exportScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+            ExportAwareRepositoryProvider(baseProvider, exportService, exportScope)
+        } else {
+            logger.info("Markdown auto-export disabled")
+            baseProvider
+        }
 
         // Initialize tool execution context
         toolExecutionContext = ToolExecutionContext(repositoryProvider)
