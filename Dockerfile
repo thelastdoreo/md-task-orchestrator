@@ -47,11 +47,12 @@ COPY --from=builder /app/build/libs/mcp-task-orchestrator-*.jar /app/orchestrato
 # Copy documentation resources needed at runtime
 COPY --from=builder /app/docs /app/docs
 
-# Volume for the SQLite database and configuration
-VOLUME /app/data
+# Ensure app user owns the working directory and create data dir before VOLUME
+RUN mkdir -p /app/data && chown -R appuser:appuser /app
 
-# Ensure app user owns the working directory
-RUN chown -R appuser:appuser /app
+# Volume for the SQLite database and configuration
+# Declared AFTER mkdir+chown so new volumes inherit appuser ownership
+VOLUME /app/data
 
 # Environment variables for configuration
 ENV DATABASE_PATH=/app/data/tasks.db
