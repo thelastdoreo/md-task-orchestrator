@@ -1,6 +1,6 @@
 {
   "name": "md-task-orchestrator",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Task management with Projects, Features, Tasks hierarchy, dependency tracking, templates, and automatic markdown export. Includes Skills for coordination and Subagents for implementation work.",
   "author": {
     "name": "thelastdoreo",
