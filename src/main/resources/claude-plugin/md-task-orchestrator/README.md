@@ -1,49 +1,40 @@
-# Task Orchestrator Communication Style Plugin
+# MD Task Orchestrator Plugin
 
-This plugin provides professional coordinator communication style for Task Orchestrator workflows.
+Claude Code plugin for MD Task Orchestrator — task management with automatic markdown export.
 
 ## What It Does
 
-Automatically injects Task Orchestrator communication guidelines at the start of each Claude Code session, enabling:
+Provides skills, agents, and communication style for orchestrating work through the md-task-orchestrator MCP server:
 
-- **Professional coordinator voice** - decisive, concise, transparent
-- **Clear status indicators** (✅ ⚠️ ❌ 🔄)
-- **Structured responses** - Status first, action second, context last
-- **Phase-based coordination** - Clear workflow progression
-- **Consistent formatting** - Standardized skill/subagent references
+- **12 Skills** — feature orchestration, task orchestration, dependency analysis, status progression, and more
+- **4 Specialist Agents** — feature architect, planning specialist, senior engineer, implementation specialist
+- **Communication Style** — professional coordinator voice with status indicators
 
 ## Installation
 
-This plugin is installed through the Claude Code plugin marketplace:
+From GitHub:
+```
+/plugin install thelastdoreo/md-task-orchestrator
+```
 
-1. **From local marketplace** (development):
-   ```
-   /plugin marketplace add ./
-   /plugin install task-orchestrator
-   ```
-
-2. **From GitHub** (production):
-   ```
-   /plugin install jpicklyk/task-orchestrator
-   ```
-
-After installation, run `setup_project` to initialize Task Orchestrator for your project.
+After installation, run `setup_project` via the MCP server to initialize configuration for your project.
 
 ## Usage
 
-Once installed, the communication style is automatically active in all Claude Code sessions. No configuration needed.
-
-**Disable**: Remove or rename the plugin directory in `.claude/plugins/task-orchestrator/`
+Skills auto-activate from natural language:
+- "Create a feature for X" → Feature Orchestration Skill
+- "What's next?" → Task Orchestration Skill
+- "What's blocking?" → Dependency Analysis Skill
 
 ## Token Cost
 
-This plugin adds approximately **600 tokens** to each session context. The guidelines help maintain consistency across orchestration workflows.
+The session hook adds ~600 tokens of communication style guidelines.
 
 ## Version
 
 **Version**: 2.0.0
-**Replaces**: Deprecated output-style system from Task Orchestrator v1.x
 
-## Support
+## Links
 
-Part of [MCP Task Orchestrator](https://github.com/jpicklyk/task-orchestrator)
+- [MD Task Orchestrator](https://github.com/thelastdoreo/md-task-orchestrator)
+- Forked from [MCP Task Orchestrator](https://github.com/jpicklyk/task-orchestrator)
