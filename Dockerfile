@@ -37,7 +37,8 @@ WORKDIR /app
 # Override at build time: docker build --build-arg APP_UID=1001 --build-arg APP_GID=1001
 ARG APP_UID=1000
 ARG APP_GID=1000
-RUN groupadd -g ${APP_GID} appuser && \
+RUN yum install -y shadow-utils && yum clean all && \
+    groupadd -g ${APP_GID} appuser && \
     useradd -u ${APP_UID} -g ${APP_GID} -m -s /bin/bash appuser
 
 # Copy the built JAR from the builder stage
