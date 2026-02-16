@@ -29,10 +29,12 @@ class ExportAwareRepositoryProvider(
         baseProvider.taskRepository(), exportService, exportScope
     )
     private val featureRepo = ExportAwareFeatureRepository(
-        baseProvider.featureRepository(), exportService, exportScope
+        baseProvider.featureRepository(), exportService, exportScope,
+        baseProvider.taskRepository()
     )
     private val projectRepo = ExportAwareProjectRepository(
-        baseProvider.projectRepository(), exportService, exportScope
+        baseProvider.projectRepository(), exportService, exportScope,
+        baseProvider.featureRepository(), baseProvider.taskRepository()
     )
     private val sectionRepo = ExportAwareSectionRepository(
         baseProvider.sectionRepository(), exportService, exportScope

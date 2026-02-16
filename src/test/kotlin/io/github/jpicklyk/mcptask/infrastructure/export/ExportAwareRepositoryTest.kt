@@ -114,12 +114,14 @@ class ExportAwareRepositoryTest {
     inner class FeatureRepositoryDecoratorTest {
 
         private lateinit var delegate: FeatureRepository
+        private lateinit var taskRepository: TaskRepository
         private lateinit var decorator: ExportAwareFeatureRepository
 
         @BeforeEach
         fun setup() {
             delegate = mockk(relaxed = true)
-            decorator = ExportAwareFeatureRepository(delegate, exportService, testScope)
+            taskRepository = mockk(relaxed = true)
+            decorator = ExportAwareFeatureRepository(delegate, exportService, testScope, taskRepository)
         }
 
         @Test
@@ -148,11 +150,31 @@ class ExportAwareRepositoryTest {
         fun `delete triggers onEntityDeleted on success`() = testScope.runTest {
             val id = UUID.randomUUID()
             coEvery { delegate.delete(id) } returns Result.Success(true)
+            coEvery { taskRepository.findByFeatureId(id) } returns emptyList()
 
             decorator.delete(id)
 
             advanceUntilIdle()
             coVerify { exportService.onEntityDeleted(id) }
+        }
+
+        @Test
+        fun `delete cascades to child task markdown files`() = testScope.runTest {
+            val featureId = UUID.randomUUID()
+            val taskId1 = UUID.randomUUID()
+            val taskId2 = UUID.randomUUID()
+            val task1 = createTestTask(taskId1)
+            val task2 = createTestTask(taskId2)
+
+            coEvery { taskRepository.findByFeatureId(featureId) } returns listOf(task1, task2)
+            coEvery { delegate.delete(featureId) } returns Result.Success(true)
+
+            decorator.delete(featureId)
+
+            advanceUntilIdle()
+            coVerify { exportService.onEntityDeleted(taskId1) }
+            coVerify { exportService.onEntityDeleted(taskId2) }
+            coVerify { exportService.onEntityDeleted(featureId) }
         }
     }
 
@@ -160,12 +182,16 @@ class ExportAwareRepositoryTest {
     inner class ProjectRepositoryDecoratorTest {
 
         private lateinit var delegate: ProjectRepository
+        private lateinit var featureRepository: FeatureRepository
+        private lateinit var taskRepository: TaskRepository
         private lateinit var decorator: ExportAwareProjectRepository
 
         @BeforeEach
         fun setup() {
             delegate = mockk(relaxed = true)
-            decorator = ExportAwareProjectRepository(delegate, exportService, testScope)
+            featureRepository = mockk(relaxed = true)
+            taskRepository = mockk(relaxed = true)
+            decorator = ExportAwareProjectRepository(delegate, exportService, testScope, featureRepository, taskRepository)
         }
 
         @Test
@@ -193,12 +219,38 @@ class ExportAwareRepositoryTest {
         @Test
         fun `delete triggers onEntityDeleted on success`() = testScope.runTest {
             val id = UUID.randomUUID()
+            coEvery { featureRepository.findByProject(id, limit = Int.MAX_VALUE) } returns Result.Success(emptyList())
+            coEvery { taskRepository.findByProject(id, limit = Int.MAX_VALUE) } returns Result.Success(emptyList())
             coEvery { delegate.delete(id) } returns Result.Success(true)
 
             decorator.delete(id)
 
             advanceUntilIdle()
             coVerify { exportService.onEntityDeleted(id) }
+        }
+
+        @Test
+        fun `delete cascades to child feature and task markdown files`() = testScope.runTest {
+            val projectId = UUID.randomUUID()
+            val featureId = UUID.randomUUID()
+            val taskId1 = UUID.randomUUID()
+            val taskId2 = UUID.randomUUID()
+            val feature = createTestFeature(featureId)
+            val task1 = createTestTask(taskId1)
+            val task2 = createTestTask(taskId2)
+
+            coEvery { featureRepository.findByProject(projectId, limit = Int.MAX_VALUE) } returns Result.Success(listOf(feature))
+            coEvery { taskRepository.findByFeatureId(featureId) } returns listOf(task1)
+            coEvery { taskRepository.findByProject(projectId, limit = Int.MAX_VALUE) } returns Result.Success(listOf(task2))
+            coEvery { delegate.delete(projectId) } returns Result.Success(true)
+
+            decorator.delete(projectId)
+
+            advanceUntilIdle()
+            coVerify { exportService.onEntityDeleted(taskId1) }
+            coVerify { exportService.onEntityDeleted(taskId2) }
+            coVerify { exportService.onEntityDeleted(featureId) }
+            coVerify { exportService.onEntityDeleted(projectId) }
         }
     }
 
