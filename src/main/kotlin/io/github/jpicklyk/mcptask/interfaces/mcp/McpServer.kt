@@ -26,10 +26,12 @@ import io.github.jpicklyk.mcptask.application.tools.status.GetNextStatusTool
 import io.github.jpicklyk.mcptask.application.tools.template.ApplyTemplateTool
 import io.github.jpicklyk.mcptask.application.tools.template.ManageTemplateTool
 import io.github.jpicklyk.mcptask.application.tools.agent.*
+import io.github.jpicklyk.mcptask.application.tools.export.RebuildVaultTool
 import io.github.jpicklyk.mcptask.domain.rendering.MarkdownRenderer
 import io.github.jpicklyk.mcptask.infrastructure.database.DatabaseManager
 import io.github.jpicklyk.mcptask.infrastructure.export.ExportAwareRepositoryProvider
 import io.github.jpicklyk.mcptask.infrastructure.export.MarkdownExportConfig
+import io.github.jpicklyk.mcptask.infrastructure.export.MarkdownExportService
 import io.github.jpicklyk.mcptask.infrastructure.export.MarkdownExportServiceImpl
 import io.github.jpicklyk.mcptask.infrastructure.repository.DefaultRepositoryProvider
 import io.github.jpicklyk.mcptask.infrastructure.repository.RepositoryProvider
@@ -69,6 +71,7 @@ class McpServer(
     private lateinit var agentRecommendationService: AgentRecommendationService
     private lateinit var statusValidator: StatusValidator
     private lateinit var statusProgressionService: StatusProgressionService
+    private var markdownExportService: MarkdownExportService? = null
     
     /**
      * Configures and runs the MCP server.
@@ -89,6 +92,7 @@ class McpServer(
             logger.info("Markdown auto-export enabled. Vault path: {}", vaultPath)
             val markdownRenderer = MarkdownRenderer()
             val exportService = MarkdownExportServiceImpl(baseProvider, markdownRenderer, vaultPath)
+            markdownExportService = exportService
             val exportScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
             ExportAwareRepositoryProvider(baseProvider, exportService, exportScope)
         } else {
@@ -296,7 +300,10 @@ class McpServer(
             // Orchestration - AI workflow automation and coordination
             SetupProjectTool(),
             GetAgentDefinitionTool(),
-            RecommendAgentTool()
+            RecommendAgentTool(),
+
+            // Export - Markdown vault management
+            RebuildVaultTool(markdownExportService)
         )
     }
 
