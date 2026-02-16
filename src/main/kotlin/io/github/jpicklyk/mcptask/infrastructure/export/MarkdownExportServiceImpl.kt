@@ -76,16 +76,21 @@ class MarkdownExportServiceImpl(
             // Resolve parent names
             var featureName: String? = null
             var projectName: String? = null
+            var resolvedProjectId = task.projectId
 
             if (task.featureId != null) {
                 val featureResult = repositoryProvider.featureRepository().getById(task.featureId)
                 if (featureResult is Result.Success) {
                     featureName = featureResult.data.name
+                    // Inherit project from feature if task doesn't have one set directly
+                    if (resolvedProjectId == null && featureResult.data.projectId != null) {
+                        resolvedProjectId = featureResult.data.projectId
+                    }
                 }
             }
 
-            if (task.projectId != null) {
-                val projectResult = repositoryProvider.projectRepository().getById(task.projectId)
+            if (resolvedProjectId != null) {
+                val projectResult = repositoryProvider.projectRepository().getById(resolvedProjectId)
                 if (projectResult is Result.Success) {
                     projectName = projectResult.data.name
                 }
