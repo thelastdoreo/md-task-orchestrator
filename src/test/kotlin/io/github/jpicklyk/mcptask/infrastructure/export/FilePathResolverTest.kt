@@ -375,6 +375,103 @@ class FilePathResolverTest {
         assertEquals("Test", sanitized)
     }
 
+    // ========== Terminal Status Subfolder Tests ==========
+
+    @Test
+    fun `resolveProjectPath places completed project in Completed subfolder`() {
+        val path = resolver.resolveProjectPath("My Project", "COMPLETED")
+        assertEquals("Completed/My Project/_project.md", path)
+    }
+
+    @Test
+    fun `resolveProjectPath places archived project in Archived subfolder`() {
+        val path = resolver.resolveProjectPath("My Project", "ARCHIVED")
+        assertEquals("Archived/My Project/_project.md", path)
+    }
+
+    @Test
+    fun `resolveProjectPath places cancelled project in Cancelled subfolder`() {
+        val path = resolver.resolveProjectPath("My Project", "CANCELLED")
+        assertEquals("Cancelled/My Project/_project.md", path)
+    }
+
+    @Test
+    fun `resolveProjectPath keeps active project at root`() {
+        val path = resolver.resolveProjectPath("My Project", "IN_DEVELOPMENT")
+        assertEquals("My Project/_project.md", path)
+    }
+
+    @Test
+    fun `resolveFeaturePath places completed feature in Completed subfolder within project`() {
+        val path = resolver.resolveFeaturePath("My Feature", "My Project", "COMPLETED")
+        assertEquals("My Project/Completed/My Feature/_feature.md", path)
+    }
+
+    @Test
+    fun `resolveFeaturePath places archived feature in Archived subfolder within project`() {
+        val path = resolver.resolveFeaturePath("My Feature", "My Project", "ARCHIVED")
+        assertEquals("My Project/Archived/My Feature/_feature.md", path)
+    }
+
+    @Test
+    fun `resolveFeaturePath places completed feature without project in Completed subfolder`() {
+        val path = resolver.resolveFeaturePath("My Feature", null, "COMPLETED")
+        assertEquals("Completed/My Feature/_feature.md", path)
+    }
+
+    @Test
+    fun `resolveFeaturePath keeps active feature at parent level`() {
+        val path = resolver.resolveFeaturePath("My Feature", "My Project", "IN_DEVELOPMENT")
+        assertEquals("My Project/My Feature/_feature.md", path)
+    }
+
+    @Test
+    fun `resolveTaskPath places completed task in Completed subfolder`() {
+        val path = resolver.resolveTaskPath("My Task", "My Feature", "My Project", "COMPLETED")
+        assertEquals("My Project/My Feature/Completed/My Task.md", path)
+    }
+
+    @Test
+    fun `resolveTaskPath places cancelled task in Cancelled subfolder`() {
+        val path = resolver.resolveTaskPath("My Task", "My Feature", "My Project", "CANCELLED")
+        assertEquals("My Project/My Feature/Cancelled/My Task.md", path)
+    }
+
+    @Test
+    fun `resolveTaskPath places deferred task in Deferred subfolder`() {
+        val path = resolver.resolveTaskPath("My Task", "My Feature", "My Project", "DEFERRED")
+        assertEquals("My Project/My Feature/Deferred/My Task.md", path)
+    }
+
+    @Test
+    fun `resolveTaskPath keeps active task at parent level`() {
+        val path = resolver.resolveTaskPath("My Task", "My Feature", "My Project", "IN_PROGRESS")
+        assertEquals("My Project/My Feature/My Task.md", path)
+    }
+
+    @Test
+    fun `resolveTaskPath with null status keeps task at parent level`() {
+        val path = resolver.resolveTaskPath("My Task", "My Feature", "My Project", null)
+        assertEquals("My Project/My Feature/My Task.md", path)
+    }
+
+    @Test
+    fun `resolveTaskPath places completed orphan task in Completed subfolder`() {
+        val path = resolver.resolveTaskPath("My Task", null, null, "COMPLETED")
+        assertEquals("Completed/My Task.md", path)
+    }
+
+    @Test
+    fun `terminalSubfolder returns correct subfolder for each terminal status`() {
+        assertEquals("Completed", FilePathResolver.terminalSubfolder("COMPLETED"))
+        assertEquals("Cancelled", FilePathResolver.terminalSubfolder("CANCELLED"))
+        assertEquals("Deferred", FilePathResolver.terminalSubfolder("DEFERRED"))
+        assertEquals("Archived", FilePathResolver.terminalSubfolder("ARCHIVED"))
+        assertEquals(null, FilePathResolver.terminalSubfolder("IN_PROGRESS"))
+        assertEquals(null, FilePathResolver.terminalSubfolder("PENDING"))
+        assertEquals(null, FilePathResolver.terminalSubfolder(null))
+    }
+
     // ========== Edge Cases ==========
 
     @Test

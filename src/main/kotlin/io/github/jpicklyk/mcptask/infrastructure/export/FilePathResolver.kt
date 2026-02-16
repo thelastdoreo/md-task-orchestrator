@@ -16,6 +16,14 @@ package io.github.jpicklyk.mcptask.infrastructure.export
  * - Task with feature only → `"Feature Name/Task Title.md"`
  * - Task with no parent → `"Task Title.md"`
  *
+ * **Terminal Status Subfolders:**
+ * Entities with terminal statuses are placed in dedicated subfolders within
+ * their parent directory, keeping active items at the root level:
+ * - COMPLETED → `Completed/`
+ * - CANCELLED → `Cancelled/`
+ * - DEFERRED → `Deferred/`
+ * - ARCHIVED → `Archived/`
+ *
  * **Filename Sanitization:**
  * - Removes invalid characters: `/ \ : * ? " < > |`
  * - Trims leading/trailing dots and spaces
@@ -29,11 +37,17 @@ class FilePathResolver {
      * Resolves the file path for a project.
      *
      * @param projectName The name of the project
-     * @return Relative path within vault (e.g., "Project Name/_project.md")
+     * @param status The project status (used to determine terminal subfolder)
+     * @return Relative path within vault (e.g., "Project Name/_project.md" or "Completed/Project Name/_project.md")
      */
-    fun resolveProjectPath(projectName: String): String {
+    fun resolveProjectPath(projectName: String, status: String? = null): String {
         val sanitized = sanitizeFileName(projectName)
-        return "$sanitized/_project.md"
+        val subfolder = terminalSubfolder(status)
+        return if (subfolder != null) {
+            "$subfolder/$sanitized/_project.md"
+        } else {
+            "$sanitized/_project.md"
+        }
     }
 
     /**
@@ -41,16 +55,26 @@ class FilePathResolver {
      *
      * @param featureName The name of the feature
      * @param projectName The name of the parent project, or null if unassigned
+     * @param status The feature status (used to determine terminal subfolder)
      * @return Relative path within vault
      */
-    fun resolveFeaturePath(featureName: String, projectName: String?): String {
+    fun resolveFeaturePath(featureName: String, projectName: String?, status: String? = null): String {
         val sanitizedFeature = sanitizeFileName(featureName)
+        val subfolder = terminalSubfolder(status)
 
         return if (projectName.isNullOrBlank()) {
-            "$sanitizedFeature/_feature.md"
+            if (subfolder != null) {
+                "$subfolder/$sanitizedFeature/_feature.md"
+            } else {
+                "$sanitizedFeature/_feature.md"
+            }
         } else {
             val sanitizedProject = sanitizeFileName(projectName)
-            "$sanitizedProject/$sanitizedFeature/_feature.md"
+            if (subfolder != null) {
+                "$sanitizedProject/$subfolder/$sanitizedFeature/_feature.md"
+            } else {
+                "$sanitizedProject/$sanitizedFeature/_feature.md"
+            }
         }
     }
 
@@ -60,31 +84,49 @@ class FilePathResolver {
      * @param taskTitle The title of the task
      * @param featureName The name of the parent feature, or null if unassigned
      * @param projectName The name of the parent project, or null if unassigned
+     * @param status The task status (used to determine terminal subfolder)
      * @return Relative path within vault
      */
-    fun resolveTaskPath(taskTitle: String, featureName: String?, projectName: String?): String {
+    fun resolveTaskPath(taskTitle: String, featureName: String?, projectName: String?, status: String? = null): String {
         val sanitizedTask = sanitizeFileName(taskTitle)
+        val subfolder = terminalSubfolder(status)
 
         return when {
             // Task with both project and feature
             !projectName.isNullOrBlank() && !featureName.isNullOrBlank() -> {
                 val sanitizedProject = sanitizeFileName(projectName)
                 val sanitizedFeature = sanitizeFileName(featureName)
-                "$sanitizedProject/$sanitizedFeature/$sanitizedTask.md"
+                if (subfolder != null) {
+                    "$sanitizedProject/$sanitizedFeature/$subfolder/$sanitizedTask.md"
+                } else {
+                    "$sanitizedProject/$sanitizedFeature/$sanitizedTask.md"
+                }
             }
             // Task with project only
             !projectName.isNullOrBlank() -> {
                 val sanitizedProject = sanitizeFileName(projectName)
-                "$sanitizedProject/$sanitizedTask.md"
+                if (subfolder != null) {
+                    "$sanitizedProject/$subfolder/$sanitizedTask.md"
+                } else {
+                    "$sanitizedProject/$sanitizedTask.md"
+                }
             }
             // Task with feature only
             !featureName.isNullOrBlank() -> {
                 val sanitizedFeature = sanitizeFileName(featureName)
-                "$sanitizedFeature/$sanitizedTask.md"
+                if (subfolder != null) {
+                    "$sanitizedFeature/$subfolder/$sanitizedTask.md"
+                } else {
+                    "$sanitizedFeature/$sanitizedTask.md"
+                }
             }
             // Task with no parent
             else -> {
-                "$sanitizedTask.md"
+                if (subfolder != null) {
+                    "$subfolder/$sanitizedTask.md"
+                } else {
+                    "$sanitizedTask.md"
+                }
             }
         }
     }
@@ -110,14 +152,21 @@ class FilePathResolver {
         private const val MAX_FILENAME_LENGTH = 200
 
         /**
+         * Returns the terminal status subfolder name, or null if the status is active.
+         * Each terminal status gets its own dedicated subfolder.
+         */
+        fun terminalSubfolder(status: String?): String? {
+            return when (status?.uppercase()) {
+                "COMPLETED" -> "Completed"
+                "CANCELLED" -> "Cancelled"
+                "DEFERRED" -> "Deferred"
+                "ARCHIVED" -> "Archived"
+                else -> null
+            }
+        }
+
+        /**
          * Sanitizes a filename by removing invalid characters and handling edge cases.
-         *
-         * **Sanitization Rules:**
-         * - Removes characters: `/ \ : * ? " < > |`
-         * - Trims leading/trailing dots and spaces
-         * - Truncates to 200 characters
-         * - Replaces empty result with `_unnamed`
-         * - Handles Windows reserved names (CON, PRN, AUX, NUL, COM1-9, LPT1-9) by prefixing with `_`
          *
          * @param name The filename to sanitize
          * @return Sanitized filename safe for all platforms

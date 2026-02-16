@@ -97,7 +97,7 @@ class MarkdownExportServiceImpl(
             }
 
             // Resolve file path
-            val relativePath = filePathResolver.resolveTaskPath(task.title, featureName, projectName)
+            val relativePath = filePathResolver.resolveTaskPath(task.title, featureName, projectName, task.status.name)
 
             // Check for rename
             deleteOldFileIfMoved(taskId, relativePath)
@@ -153,14 +153,14 @@ class MarkdownExportServiceImpl(
             val childTasks = repositoryProvider.taskRepository().findByFeatureId(featureId)
 
             // Resolve file path
-            val relativePath = filePathResolver.resolveFeaturePath(feature.name, projectName)
+            val relativePath = filePathResolver.resolveFeaturePath(feature.name, projectName, feature.status.name)
 
-            // Detect name change via sync state path comparison
+            // Detect path change via sync state comparison (name or status change)
             val oldPath = syncStateManager.getPath(featureId)
-            val nameChanged = oldPath != null && oldPath != relativePath
+            val pathChanged = oldPath != null && oldPath != relativePath
             val isFirstExport = oldPath == null
 
-            // Check for rename
+            // Check for rename/move
             deleteOldFileIfMoved(featureId, relativePath)
 
             // Render markdown (includes child task status table)
@@ -174,9 +174,9 @@ class MarkdownExportServiceImpl(
 
             logger.debug("Successfully exported feature {} to {}", featureId, relativePath)
 
-            // Re-export child tasks if name changed (paths affected) or first export
-            if (nameChanged || isFirstExport) {
-                logger.debug("Re-exporting child tasks for feature {} (nameChanged={}, firstExport={})", featureId, nameChanged, isFirstExport)
+            // Re-export child tasks if path changed (name or status change) or first export
+            if (pathChanged || isFirstExport) {
+                logger.debug("Re-exporting child tasks for feature {} (pathChanged={}, firstExport={})", featureId, pathChanged, isFirstExport)
                 for (task in childTasks) {
                     exportTask(task.id)
                 }
@@ -217,14 +217,14 @@ class MarkdownExportServiceImpl(
             }
 
             // Resolve file path
-            val relativePath = filePathResolver.resolveProjectPath(project.name)
+            val relativePath = filePathResolver.resolveProjectPath(project.name, project.status.name)
 
-            // Detect name change via sync state path comparison
+            // Detect path change via sync state comparison (name or status change)
             val oldPath = syncStateManager.getPath(projectId)
-            val nameChanged = oldPath != null && oldPath != relativePath
+            val pathChanged = oldPath != null && oldPath != relativePath
             val isFirstExport = oldPath == null
 
-            // Check for rename
+            // Check for rename/move
             deleteOldFileIfMoved(projectId, relativePath)
 
             // Render markdown (includes child feature status table)
@@ -238,9 +238,9 @@ class MarkdownExportServiceImpl(
 
             logger.debug("Successfully exported project {} to {}", projectId, relativePath)
 
-            // Re-export child features if name changed (paths affected) or first export
-            if (nameChanged || isFirstExport) {
-                logger.debug("Re-exporting child features for project {} (nameChanged={}, firstExport={})", projectId, nameChanged, isFirstExport)
+            // Re-export child features if path changed (name or status change) or first export
+            if (pathChanged || isFirstExport) {
+                logger.debug("Re-exporting child features for project {} (pathChanged={}, firstExport={})", projectId, pathChanged, isFirstExport)
                 for (feature in childFeatures) {
                     exportFeature(feature.id)
                 }

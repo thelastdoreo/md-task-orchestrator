@@ -263,10 +263,12 @@ class MarkdownRenderer(
                 append(" | ")
                 append(task.complexity)
                 append(" | ")
+                val subfolder = terminalSubfolder(task.status.name)
+                val prefix = if (subfolder != null) "$subfolder/" else ""
                 append("[")
                 append(task.title)
                 append("](")
-                append(encodeLink(sanitizeLinkPath(task.title)))
+                append(encodeLink("$prefix${sanitizeLinkPath(task.title)}"))
                 append(".md)")
                 append(" |")
             }
@@ -285,10 +287,12 @@ class MarkdownRenderer(
                 append(" | ")
                 append(formatStatus(feature.priority.name))
                 append(" | ")
+                val subfolder = terminalSubfolder(feature.status.name)
+                val prefix = if (subfolder != null) "$subfolder/" else ""
                 append("[")
                 append(feature.name)
                 append("](")
-                append(encodeLink(sanitizeLinkPath(feature.name)))
+                append(encodeLink("$prefix${sanitizeLinkPath(feature.name)}"))
                 append("/_feature.md)")
                 append(" |")
             }
@@ -298,6 +302,17 @@ class MarkdownRenderer(
     private fun formatStatus(enumName: String): String {
         return enumName.split('_').joinToString(" ") { word ->
             word.lowercase().replaceFirstChar { it.uppercase() }
+        }
+    }
+
+    /** Returns the terminal status subfolder name, or null if the status is active. */
+    private fun terminalSubfolder(status: String): String? {
+        return when (status.uppercase()) {
+            "COMPLETED" -> "Completed"
+            "CANCELLED" -> "Cancelled"
+            "DEFERRED" -> "Deferred"
+            "ARCHIVED" -> "Archived"
+            else -> null
         }
     }
 
