@@ -74,6 +74,33 @@ interface MarkdownExportService {
     suspend fun onEntityDeleted(entityId: UUID)
 
     /**
+     * Export feature status document listing child tasks.
+     * Lightweight: one DB query + one file write.
+     */
+    suspend fun exportFeatureStatusDoc(featureId: UUID)
+
+    /**
+     * Export project status document listing child features.
+     * Lightweight: one DB query + one file write.
+     */
+    suspend fun exportProjectStatusDoc(projectId: UUID)
+
+    /**
+     * Notify parent status docs that a child entity changed.
+     * Resolves parent chain and regenerates status docs upward.
+     * If projectId is null but featureId is set, looks up the feature's projectId.
+     */
+    suspend fun notifyParentStatusDocs(featureId: UUID?, projectId: UUID?)
+
+    /**
+     * Delete the status document for a feature or project directory.
+     * Called during entity deletion to clean up _status.md alongside _feature.md/_project.md.
+     *
+     * @param entityId The UUID of the feature or project being deleted
+     */
+    suspend fun deleteStatusDoc(entityId: UUID)
+
+    /**
      * Export all entities to markdown vault.
      *
      * - Exports all projects

@@ -89,6 +89,27 @@ class FilePathResolver {
         }
     }
 
+    /**
+     * Resolves the file path for a feature status document.
+     */
+    fun resolveFeatureStatusPath(featureName: String, projectName: String?): String {
+        val sanitizedFeature = sanitizeFileName(featureName)
+        return if (projectName.isNullOrBlank()) {
+            "$sanitizedFeature/_status.md"
+        } else {
+            val sanitizedProject = sanitizeFileName(projectName)
+            "$sanitizedProject/$sanitizedFeature/_status.md"
+        }
+    }
+
+    /**
+     * Resolves the file path for a project status document.
+     */
+    fun resolveProjectStatusPath(projectName: String): String {
+        val sanitized = sanitizeFileName(projectName)
+        return "$sanitized/_status.md"
+    }
+
     companion object {
         /**
          * Windows reserved filenames that need special handling.

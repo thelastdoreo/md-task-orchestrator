@@ -41,7 +41,7 @@ class ExportAwareRepositoryTest {
         }
 
         @Test
-        fun `create triggers export on success`() = testScope.runTest {
+        fun `create triggers export and notifies parent status docs on success`() = testScope.runTest {
             val task = createTestTask()
             coEvery { delegate.create(task) } returns Result.Success(task)
 
@@ -50,6 +50,7 @@ class ExportAwareRepositoryTest {
             assertTrue(result is Result.Success)
             advanceUntilIdle()
             coVerify { exportService.exportTask(task.id) }
+            coVerify { exportService.notifyParentStatusDocs(task.featureId, task.projectId) }
         }
 
         @Test
@@ -61,10 +62,11 @@ class ExportAwareRepositoryTest {
 
             advanceUntilIdle()
             coVerify(exactly = 0) { exportService.exportTask(any()) }
+            coVerify(exactly = 0) { exportService.notifyParentStatusDocs(any(), any()) }
         }
 
         @Test
-        fun `update triggers export on success`() = testScope.runTest {
+        fun `update triggers export and notifies parent status docs on success`() = testScope.runTest {
             val task = createTestTask()
             coEvery { delegate.update(task) } returns Result.Success(task)
 
@@ -72,17 +74,22 @@ class ExportAwareRepositoryTest {
 
             advanceUntilIdle()
             coVerify { exportService.exportTask(task.id) }
+            coVerify { exportService.notifyParentStatusDocs(task.featureId, task.projectId) }
         }
 
         @Test
-        fun `delete triggers onEntityDeleted on success`() = testScope.runTest {
-            val id = UUID.randomUUID()
-            coEvery { delegate.delete(id) } returns Result.Success(true)
+        fun `delete triggers onEntityDeleted and notifies parent status docs on success`() = testScope.runTest {
+            val featureId = UUID.randomUUID()
+            val projectId = UUID.randomUUID()
+            val task = createTestTask(featureId = featureId, projectId = projectId)
+            coEvery { delegate.getById(task.id) } returns Result.Success(task)
+            coEvery { delegate.delete(task.id) } returns Result.Success(true)
 
-            decorator.delete(id)
+            decorator.delete(task.id)
 
             advanceUntilIdle()
-            coVerify { exportService.onEntityDeleted(id) }
+            coVerify { exportService.onEntityDeleted(task.id) }
+            coVerify { exportService.notifyParentStatusDocs(featureId, projectId) }
         }
 
         @Test
@@ -94,6 +101,7 @@ class ExportAwareRepositoryTest {
 
             advanceUntilIdle()
             coVerify(exactly = 0) { exportService.onEntityDeleted(any()) }
+            coVerify(exactly = 0) { exportService.notifyParentStatusDocs(any(), any()) }
         }
 
         @Test
@@ -125,41 +133,49 @@ class ExportAwareRepositoryTest {
         }
 
         @Test
-        fun `create triggers export on success`() = testScope.runTest {
-            val feature = createTestFeature()
+        fun `create triggers export and notifies project status doc on success`() = testScope.runTest {
+            val projectId = UUID.randomUUID()
+            val feature = createTestFeature(projectId = projectId)
             coEvery { delegate.create(feature) } returns Result.Success(feature)
 
             decorator.create(feature)
 
             advanceUntilIdle()
             coVerify { exportService.exportFeature(feature.id) }
+            coVerify { exportService.exportProjectStatusDoc(projectId) }
         }
 
         @Test
-        fun `update triggers export on success`() = testScope.runTest {
-            val feature = createTestFeature()
+        fun `update triggers export and notifies project status doc on success`() = testScope.runTest {
+            val projectId = UUID.randomUUID()
+            val feature = createTestFeature(projectId = projectId)
             coEvery { delegate.update(feature) } returns Result.Success(feature)
 
             decorator.update(feature)
 
             advanceUntilIdle()
             coVerify { exportService.exportFeature(feature.id) }
+            coVerify { exportService.exportProjectStatusDoc(projectId) }
         }
 
         @Test
-        fun `delete triggers onEntityDeleted on success`() = testScope.runTest {
-            val id = UUID.randomUUID()
-            coEvery { delegate.delete(id) } returns Result.Success(true)
-            coEvery { taskRepository.findByFeatureId(id) } returns emptyList()
+        fun `delete triggers onEntityDeleted and cleans up status doc on success`() = testScope.runTest {
+            val projectId = UUID.randomUUID()
+            val feature = createTestFeature(projectId = projectId)
+            coEvery { delegate.getById(feature.id) } returns Result.Success(feature)
+            coEvery { delegate.delete(feature.id) } returns Result.Success(true)
+            coEvery { taskRepository.findByFeatureId(feature.id) } returns emptyList()
 
-            decorator.delete(id)
+            decorator.delete(feature.id)
 
             advanceUntilIdle()
-            coVerify { exportService.onEntityDeleted(id) }
+            coVerify { exportService.deleteStatusDoc(feature.id) }
+            coVerify { exportService.onEntityDeleted(feature.id) }
+            coVerify { exportService.exportProjectStatusDoc(projectId) }
         }
 
         @Test
-        fun `delete cascades to child task markdown files`() = testScope.runTest {
+        fun `delete cascades to child task markdown files and cleans up status doc`() = testScope.runTest {
             val featureId = UUID.randomUUID()
             val taskId1 = UUID.randomUUID()
             val taskId2 = UUID.randomUUID()
@@ -174,6 +190,7 @@ class ExportAwareRepositoryTest {
             advanceUntilIdle()
             coVerify { exportService.onEntityDeleted(taskId1) }
             coVerify { exportService.onEntityDeleted(taskId2) }
+            coVerify { exportService.deleteStatusDoc(featureId) }
             coVerify { exportService.onEntityDeleted(featureId) }
         }
     }
@@ -217,7 +234,7 @@ class ExportAwareRepositoryTest {
         }
 
         @Test
-        fun `delete triggers onEntityDeleted on success`() = testScope.runTest {
+        fun `delete triggers onEntityDeleted and cleans up status doc on success`() = testScope.runTest {
             val id = UUID.randomUUID()
             coEvery { featureRepository.findByProject(id, limit = Int.MAX_VALUE) } returns Result.Success(emptyList())
             coEvery { taskRepository.findByProject(id, limit = Int.MAX_VALUE) } returns Result.Success(emptyList())
@@ -226,11 +243,12 @@ class ExportAwareRepositoryTest {
             decorator.delete(id)
 
             advanceUntilIdle()
+            coVerify { exportService.deleteStatusDoc(id) }
             coVerify { exportService.onEntityDeleted(id) }
         }
 
         @Test
-        fun `delete cascades to child feature and task markdown files`() = testScope.runTest {
+        fun `delete cascades to child feature and task markdown files with status doc cleanup`() = testScope.runTest {
             val projectId = UUID.randomUUID()
             val featureId = UUID.randomUUID()
             val taskId1 = UUID.randomUUID()
@@ -249,7 +267,9 @@ class ExportAwareRepositoryTest {
             advanceUntilIdle()
             coVerify { exportService.onEntityDeleted(taskId1) }
             coVerify { exportService.onEntityDeleted(taskId2) }
+            coVerify { exportService.deleteStatusDoc(featureId) }
             coVerify { exportService.onEntityDeleted(featureId) }
+            coVerify { exportService.deleteStatusDoc(projectId) }
             coVerify { exportService.onEntityDeleted(projectId) }
         }
     }
@@ -372,23 +392,33 @@ class ExportAwareRepositoryTest {
 
     // Test helpers
 
-    private fun createTestTask(id: UUID = UUID.randomUUID()) = Task(
+    private fun createTestTask(
+        id: UUID = UUID.randomUUID(),
+        featureId: UUID? = null,
+        projectId: UUID? = null
+    ) = Task(
         id = id,
         title = "Test Task",
         summary = "A test task for unit testing purposes with enough characters",
         status = TaskStatus.PENDING,
         priority = Priority.MEDIUM,
         complexity = 5,
+        featureId = featureId,
+        projectId = projectId,
         createdAt = Instant.now(),
         modifiedAt = Instant.now()
     )
 
-    private fun createTestFeature(id: UUID = UUID.randomUUID()) = Feature(
+    private fun createTestFeature(
+        id: UUID = UUID.randomUUID(),
+        projectId: UUID? = null
+    ) = Feature(
         id = id,
         name = "Test Feature",
         summary = "A test feature for unit testing purposes with enough characters",
         status = FeatureStatus.PLANNING,
         priority = Priority.MEDIUM,
+        projectId = projectId,
         createdAt = Instant.now(),
         modifiedAt = Instant.now()
     )

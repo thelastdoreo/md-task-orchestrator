@@ -141,6 +141,174 @@ class MarkdownRenderer(
         }.trimEnd()
     }
 
+    // Status sort orders for status doc tables
+    private val taskStatusOrder = listOf(
+        TaskStatus.IN_PROGRESS, TaskStatus.TESTING, TaskStatus.IN_REVIEW,
+        TaskStatus.READY_FOR_QA, TaskStatus.INVESTIGATING, TaskStatus.BLOCKED,
+        TaskStatus.CHANGES_REQUESTED, TaskStatus.PENDING, TaskStatus.BACKLOG,
+        TaskStatus.ON_HOLD, TaskStatus.DEPLOYED, TaskStatus.DEFERRED
+    )
+    private val featureStatusOrder = listOf(
+        FeatureStatus.IN_DEVELOPMENT, FeatureStatus.TESTING, FeatureStatus.VALIDATING,
+        FeatureStatus.PENDING_REVIEW, FeatureStatus.BLOCKED, FeatureStatus.PLANNING,
+        FeatureStatus.DRAFT, FeatureStatus.ON_HOLD, FeatureStatus.DEPLOYED
+    )
+    private val priorityOrder = listOf(Priority.HIGH, Priority.MEDIUM, Priority.LOW)
+
+    /**
+     * Renders a feature status overview document listing child tasks.
+     *
+     * Creates sorted tables grouped into Active, Completed, and Cancelled sections.
+     * Completed and Cancelled tables are omitted when empty.
+     *
+     * @param featureName Name of the feature
+     * @param tasks List of tasks belonging to the feature
+     * @return Markdown document with task status overview
+     */
+    fun renderFeatureStatusDoc(featureName: String, tasks: List<Task>): String {
+        val active = tasks.filter { it.status != TaskStatus.COMPLETED && it.status != TaskStatus.CANCELLED && it.status != TaskStatus.DEFERRED }
+        val completed = tasks.filter { it.status == TaskStatus.COMPLETED }
+        val cancelled = tasks.filter { it.status == TaskStatus.CANCELLED || it.status == TaskStatus.DEFERRED }
+
+        return buildString {
+            append("# ")
+            append(featureName)
+            append(options.lineEnding)
+            append(options.lineEnding)
+
+            append(renderTaskStatusTable(sortTasks(active)))
+
+            if (completed.isNotEmpty()) {
+                append(options.lineEnding)
+                append(options.lineEnding)
+                append("## Completed")
+                append(options.lineEnding)
+                append(options.lineEnding)
+                append(renderTaskStatusTable(sortTasks(completed)))
+            }
+
+            if (cancelled.isNotEmpty()) {
+                append(options.lineEnding)
+                append(options.lineEnding)
+                append("## Cancelled")
+                append(options.lineEnding)
+                append(options.lineEnding)
+                append(renderTaskStatusTable(sortTasks(cancelled)))
+            }
+        }.trimEnd()
+    }
+
+    /**
+     * Renders a project status overview document listing child features.
+     *
+     * Creates sorted tables grouped into Active, Completed, and Archived sections.
+     * Completed and Archived tables are omitted when empty.
+     *
+     * @param projectName Name of the project
+     * @param features List of features belonging to the project
+     * @return Markdown document with feature status overview
+     */
+    fun renderProjectStatusDoc(projectName: String, features: List<Feature>): String {
+        val active = features.filter { it.status != FeatureStatus.COMPLETED && it.status != FeatureStatus.ARCHIVED }
+        val completed = features.filter { it.status == FeatureStatus.COMPLETED }
+        val archived = features.filter { it.status == FeatureStatus.ARCHIVED }
+
+        return buildString {
+            append("# ")
+            append(projectName)
+            append(options.lineEnding)
+            append(options.lineEnding)
+
+            append(renderFeatureStatusTable(sortFeatures(active)))
+
+            if (completed.isNotEmpty()) {
+                append(options.lineEnding)
+                append(options.lineEnding)
+                append("## Completed")
+                append(options.lineEnding)
+                append(options.lineEnding)
+                append(renderFeatureStatusTable(sortFeatures(completed)))
+            }
+
+            if (archived.isNotEmpty()) {
+                append(options.lineEnding)
+                append(options.lineEnding)
+                append("## Archived")
+                append(options.lineEnding)
+                append(options.lineEnding)
+                append(renderFeatureStatusTable(sortFeatures(archived)))
+            }
+        }.trimEnd()
+    }
+
+    private fun sortTasks(tasks: List<Task>): List<Task> {
+        return tasks.sortedWith(compareBy<Task> {
+            val idx = taskStatusOrder.indexOf(it.status)
+            if (idx == -1) taskStatusOrder.size else idx
+        }.thenBy {
+            priorityOrder.indexOf(it.priority)
+        })
+    }
+
+    private fun sortFeatures(features: List<Feature>): List<Feature> {
+        return features.sortedWith(compareBy<Feature> {
+            val idx = featureStatusOrder.indexOf(it.status)
+            if (idx == -1) featureStatusOrder.size else idx
+        }.thenBy {
+            priorityOrder.indexOf(it.priority)
+        })
+    }
+
+    private fun renderTaskStatusTable(tasks: List<Task>): String {
+        return buildString {
+            append("| Status | Priority | Complexity | Task |")
+            append(options.lineEnding)
+            append("|--------|----------|------------|------|")
+            for (task in tasks) {
+                append(options.lineEnding)
+                append("| ")
+                append(formatStatus(task.status.name))
+                append(" | ")
+                append(formatStatus(task.priority.name))
+                append(" | ")
+                append(task.complexity)
+                append(" | ")
+                append("[[")
+                append(task.title)
+                append("]]")
+                append(" |")
+            }
+        }
+    }
+
+    private fun renderFeatureStatusTable(features: List<Feature>): String {
+        return buildString {
+            append("| Status | Priority | Feature |")
+            append(options.lineEnding)
+            append("|--------|----------|---------|")
+            for (feature in features) {
+                append(options.lineEnding)
+                append("| ")
+                append(formatStatus(feature.status.name))
+                append(" | ")
+                append(formatStatus(feature.priority.name))
+                append(" | ")
+                append("[[")
+                append(feature.name)
+                append("/_feature|")
+                append(feature.name)
+                append("]]")
+                append(" |")
+            }
+        }
+    }
+
+    private fun formatStatus(enumName: String): String {
+        return enumName.split('_').joinToString(" ") { word ->
+            word.lowercase().replaceFirstChar { it.uppercase() }
+        }
+    }
+
     /**
      * Renders a single section as markdown.
      *

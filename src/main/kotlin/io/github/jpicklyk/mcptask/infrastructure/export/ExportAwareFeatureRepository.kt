@@ -34,7 +34,7 @@ class ExportAwareFeatureRepository(
     override suspend fun create(entity: Feature): Result<Feature> {
         val result = delegate.create(entity)
         if (result is Result.Success) {
-            triggerExport(result.data.id)
+            triggerExport(result.data)
         }
         return result
     }
@@ -42,12 +42,16 @@ class ExportAwareFeatureRepository(
     override suspend fun update(entity: Feature): Result<Feature> {
         val result = delegate.update(entity)
         if (result is Result.Success) {
-            triggerExport(result.data.id)
+            triggerExport(result.data)
         }
         return result
     }
 
     override suspend fun delete(id: UUID): Result<Boolean> {
+        // Load feature before delete for parent project ID
+        val featureResult = delegate.getById(id)
+        val feature = (featureResult as? Result.Success)?.data
+
         // Collect child task IDs BEFORE DB delete cascades remove them
         val childTaskIds = mutableListOf<UUID>()
         try {
@@ -61,11 +65,16 @@ class ExportAwareFeatureRepository(
         if (result is Result.Success && result.data) {
             exportScope.launch {
                 try {
-                    // Delete child task files first, then feature
+                    // Delete child task files, then feature _status.md, then feature
                     for (taskId in childTaskIds) {
                         exportService.onEntityDeleted(taskId)
                     }
+                    exportService.deleteStatusDoc(id)
                     exportService.onEntityDeleted(id)
+                    // Notify parent project status doc that feature was removed
+                    if (feature?.projectId != null) {
+                        exportService.exportProjectStatusDoc(feature.projectId)
+                    }
                 } catch (e: Exception) {
                     logger.warn("Failed to handle feature deletion export for {}: {}", id, e.message)
                 }
@@ -74,12 +83,16 @@ class ExportAwareFeatureRepository(
         return result
     }
 
-    private fun triggerExport(featureId: UUID) {
+    private fun triggerExport(feature: Feature) {
         exportScope.launch {
             try {
-                exportService.exportFeature(featureId)
+                exportService.exportFeature(feature.id)
+                // Notify parent project status doc
+                if (feature.projectId != null) {
+                    exportService.exportProjectStatusDoc(feature.projectId)
+                }
             } catch (e: Exception) {
-                logger.warn("Failed to export feature {}: {}", featureId, e.message)
+                logger.warn("Failed to export feature {}: {}", feature.id, e.message)
             }
         }
     }

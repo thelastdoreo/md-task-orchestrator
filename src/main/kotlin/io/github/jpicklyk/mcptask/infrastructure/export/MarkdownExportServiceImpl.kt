@@ -152,6 +152,11 @@ class MarkdownExportServiceImpl(
             // Resolve file path
             val relativePath = filePathResolver.resolveFeaturePath(feature.name, projectName)
 
+            // Detect name change via sync state path comparison
+            val oldPath = syncStateManager.getPath(featureId)
+            val nameChanged = oldPath != null && oldPath != relativePath
+            val isFirstExport = oldPath == null
+
             // Check for rename
             deleteOldFileIfMoved(featureId, relativePath)
 
@@ -166,11 +171,17 @@ class MarkdownExportServiceImpl(
 
             logger.debug("Successfully exported feature {} to {}", featureId, relativePath)
 
-            // Re-export child tasks
-            val childTasks = repositoryProvider.taskRepository().findByFeatureId(featureId)
-            for (task in childTasks) {
-                exportTask(task.id)
+            // Re-export child tasks if name changed (paths affected) or first export
+            if (nameChanged || isFirstExport) {
+                logger.debug("Re-exporting child tasks for feature {} (nameChanged={}, firstExport={})", featureId, nameChanged, isFirstExport)
+                val childTasks = repositoryProvider.taskRepository().findByFeatureId(featureId)
+                for (task in childTasks) {
+                    exportTask(task.id)
+                }
             }
+
+            // Always regenerate status doc
+            exportFeatureStatusDoc(featureId)
 
         } catch (e: Exception) {
             logger.warn("Failed to export feature $featureId: ${e.message}", e)
@@ -202,6 +213,11 @@ class MarkdownExportServiceImpl(
             // Resolve file path
             val relativePath = filePathResolver.resolveProjectPath(project.name)
 
+            // Detect name change via sync state path comparison
+            val oldPath = syncStateManager.getPath(projectId)
+            val nameChanged = oldPath != null && oldPath != relativePath
+            val isFirstExport = oldPath == null
+
             // Check for rename
             deleteOldFileIfMoved(projectId, relativePath)
 
@@ -216,16 +232,100 @@ class MarkdownExportServiceImpl(
 
             logger.debug("Successfully exported project {} to {}", projectId, relativePath)
 
-            // Re-export child features
-            val featuresResult = repositoryProvider.featureRepository().findByProject(projectId, limit = Int.MAX_VALUE)
-            if (featuresResult is Result.Success) {
-                for (feature in featuresResult.data) {
-                    exportFeature(feature.id)
+            // Re-export child features if name changed (paths affected) or first export
+            if (nameChanged || isFirstExport) {
+                logger.debug("Re-exporting child features for project {} (nameChanged={}, firstExport={})", projectId, nameChanged, isFirstExport)
+                val featuresResult = repositoryProvider.featureRepository().findByProject(projectId, limit = Int.MAX_VALUE)
+                if (featuresResult is Result.Success) {
+                    for (feature in featuresResult.data) {
+                        exportFeature(feature.id)
+                    }
                 }
             }
 
+            // Always regenerate status doc
+            exportProjectStatusDoc(projectId)
+
         } catch (e: Exception) {
             logger.warn("Failed to export project $projectId: ${e.message}", e)
+        }
+    }
+
+    override suspend fun exportFeatureStatusDoc(featureId: UUID) {
+        try {
+            // Load feature
+            val featureResult = repositoryProvider.featureRepository().getById(featureId)
+            if (featureResult !is Result.Success) return
+            val feature = featureResult.data
+
+            // Load child tasks
+            val tasks = repositoryProvider.taskRepository().findByFeatureId(featureId)
+
+            // Resolve parent name for path
+            var projectName: String? = null
+            if (feature.projectId != null) {
+                val projectResult = repositoryProvider.projectRepository().getById(feature.projectId)
+                if (projectResult is Result.Success) {
+                    projectName = projectResult.data.name
+                }
+            }
+
+            val relativePath = filePathResolver.resolveFeatureStatusPath(feature.name, projectName)
+            val markdown = markdownRenderer.renderFeatureStatusDoc(feature.name, tasks)
+            writeMarkdownFile(relativePath, markdown)
+
+            logger.debug("Exported feature status doc to {}", relativePath)
+        } catch (e: Exception) {
+            logger.warn("Failed to export feature status doc $featureId: ${e.message}", e)
+        }
+    }
+
+    override suspend fun exportProjectStatusDoc(projectId: UUID) {
+        try {
+            // Load project
+            val projectResult = repositoryProvider.projectRepository().getById(projectId)
+            if (projectResult !is Result.Success) return
+            val project = projectResult.data
+
+            // Load child features
+            val featuresResult = repositoryProvider.featureRepository().findByProject(projectId, limit = Int.MAX_VALUE)
+            val features = when (featuresResult) {
+                is Result.Success -> featuresResult.data
+                is Result.Error -> emptyList()
+            }
+
+            val relativePath = filePathResolver.resolveProjectStatusPath(project.name)
+            val markdown = markdownRenderer.renderProjectStatusDoc(project.name, features)
+            writeMarkdownFile(relativePath, markdown)
+
+            logger.debug("Exported project status doc to {}", relativePath)
+        } catch (e: Exception) {
+            logger.warn("Failed to export project status doc $projectId: ${e.message}", e)
+        }
+    }
+
+    override suspend fun notifyParentStatusDocs(featureId: UUID?, projectId: UUID?) {
+        try {
+            // Regenerate feature status doc
+            if (featureId != null) {
+                exportFeatureStatusDoc(featureId)
+            }
+
+            // Resolve project ID (may need to look up via feature)
+            var resolvedProjectId = projectId
+            if (resolvedProjectId == null && featureId != null) {
+                val featureResult = repositoryProvider.featureRepository().getById(featureId)
+                if (featureResult is Result.Success) {
+                    resolvedProjectId = featureResult.data.projectId
+                }
+            }
+
+            // Regenerate project status doc
+            if (resolvedProjectId != null) {
+                exportProjectStatusDoc(resolvedProjectId)
+            }
+        } catch (e: Exception) {
+            logger.warn("Failed to notify parent status docs: ${e.message}", e)
         }
     }
 
@@ -254,6 +354,19 @@ class MarkdownExportServiceImpl(
 
         } catch (e: Exception) {
             logger.warn("Failed to handle deletion for entity $entityId: ${e.message}", e)
+        }
+    }
+
+    override suspend fun deleteStatusDoc(entityId: UUID) {
+        try {
+            val entityPath = syncStateManager.getPath(entityId) ?: return
+            // Replace _feature.md or _project.md with _status.md in the same directory
+            val statusPath = entityPath.substringBeforeLast('/') + "/_status.md"
+            val filePath = vaultPath.resolve(statusPath)
+            deleteFile(filePath)
+            logger.debug("Deleted status doc for entity {} at {}", entityId, statusPath)
+        } catch (e: Exception) {
+            logger.warn("Failed to delete status doc for entity $entityId: ${e.message}", e)
         }
     }
 
