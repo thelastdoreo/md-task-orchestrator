@@ -50,7 +50,7 @@ class ExportAwareRepositoryTest {
             assertTrue(result is Result.Success)
             advanceUntilIdle()
             coVerify { exportService.exportTask(task.id) }
-            coVerify { exportService.notifyParentStatusDocs(task.featureId, task.projectId) }
+            coVerify { exportService.notifyParentExports(task.featureId, task.projectId) }
         }
 
         @Test
@@ -62,7 +62,7 @@ class ExportAwareRepositoryTest {
 
             advanceUntilIdle()
             coVerify(exactly = 0) { exportService.exportTask(any()) }
-            coVerify(exactly = 0) { exportService.notifyParentStatusDocs(any(), any()) }
+            coVerify(exactly = 0) { exportService.notifyParentExports(any(), any()) }
         }
 
         @Test
@@ -74,7 +74,7 @@ class ExportAwareRepositoryTest {
 
             advanceUntilIdle()
             coVerify { exportService.exportTask(task.id) }
-            coVerify { exportService.notifyParentStatusDocs(task.featureId, task.projectId) }
+            coVerify { exportService.notifyParentExports(task.featureId, task.projectId) }
         }
 
         @Test
@@ -89,7 +89,7 @@ class ExportAwareRepositoryTest {
 
             advanceUntilIdle()
             coVerify { exportService.onEntityDeleted(task.id) }
-            coVerify { exportService.notifyParentStatusDocs(featureId, projectId) }
+            coVerify { exportService.notifyParentExports(featureId, projectId) }
         }
 
         @Test
@@ -101,7 +101,7 @@ class ExportAwareRepositoryTest {
 
             advanceUntilIdle()
             coVerify(exactly = 0) { exportService.onEntityDeleted(any()) }
-            coVerify(exactly = 0) { exportService.notifyParentStatusDocs(any(), any()) }
+            coVerify(exactly = 0) { exportService.notifyParentExports(any(), any()) }
         }
 
         @Test
@@ -133,7 +133,7 @@ class ExportAwareRepositoryTest {
         }
 
         @Test
-        fun `create triggers export and notifies project status doc on success`() = testScope.runTest {
+        fun `create triggers export and re-exports parent project on success`() = testScope.runTest {
             val projectId = UUID.randomUUID()
             val feature = createTestFeature(projectId = projectId)
             coEvery { delegate.create(feature) } returns Result.Success(feature)
@@ -142,11 +142,11 @@ class ExportAwareRepositoryTest {
 
             advanceUntilIdle()
             coVerify { exportService.exportFeature(feature.id) }
-            coVerify { exportService.exportProjectStatusDoc(projectId) }
+            coVerify { exportService.exportProject(projectId) }
         }
 
         @Test
-        fun `update triggers export and notifies project status doc on success`() = testScope.runTest {
+        fun `update triggers export and re-exports parent project on success`() = testScope.runTest {
             val projectId = UUID.randomUUID()
             val feature = createTestFeature(projectId = projectId)
             coEvery { delegate.update(feature) } returns Result.Success(feature)
@@ -155,11 +155,11 @@ class ExportAwareRepositoryTest {
 
             advanceUntilIdle()
             coVerify { exportService.exportFeature(feature.id) }
-            coVerify { exportService.exportProjectStatusDoc(projectId) }
+            coVerify { exportService.exportProject(projectId) }
         }
 
         @Test
-        fun `delete triggers onEntityDeleted and cleans up status doc on success`() = testScope.runTest {
+        fun `delete triggers onEntityDeleted and re-exports parent project on success`() = testScope.runTest {
             val projectId = UUID.randomUUID()
             val feature = createTestFeature(projectId = projectId)
             coEvery { delegate.getById(feature.id) } returns Result.Success(feature)
@@ -169,13 +169,12 @@ class ExportAwareRepositoryTest {
             decorator.delete(feature.id)
 
             advanceUntilIdle()
-            coVerify { exportService.deleteStatusDoc(feature.id) }
             coVerify { exportService.onEntityDeleted(feature.id) }
-            coVerify { exportService.exportProjectStatusDoc(projectId) }
+            coVerify { exportService.exportProject(projectId) }
         }
 
         @Test
-        fun `delete cascades to child task markdown files and cleans up status doc`() = testScope.runTest {
+        fun `delete cascades to child task markdown files`() = testScope.runTest {
             val featureId = UUID.randomUUID()
             val taskId1 = UUID.randomUUID()
             val taskId2 = UUID.randomUUID()
@@ -190,7 +189,6 @@ class ExportAwareRepositoryTest {
             advanceUntilIdle()
             coVerify { exportService.onEntityDeleted(taskId1) }
             coVerify { exportService.onEntityDeleted(taskId2) }
-            coVerify { exportService.deleteStatusDoc(featureId) }
             coVerify { exportService.onEntityDeleted(featureId) }
         }
     }
@@ -234,7 +232,7 @@ class ExportAwareRepositoryTest {
         }
 
         @Test
-        fun `delete triggers onEntityDeleted and cleans up status doc on success`() = testScope.runTest {
+        fun `delete triggers onEntityDeleted on success`() = testScope.runTest {
             val id = UUID.randomUUID()
             coEvery { featureRepository.findByProject(id, limit = Int.MAX_VALUE) } returns Result.Success(emptyList())
             coEvery { taskRepository.findByProject(id, limit = Int.MAX_VALUE) } returns Result.Success(emptyList())
@@ -243,12 +241,11 @@ class ExportAwareRepositoryTest {
             decorator.delete(id)
 
             advanceUntilIdle()
-            coVerify { exportService.deleteStatusDoc(id) }
             coVerify { exportService.onEntityDeleted(id) }
         }
 
         @Test
-        fun `delete cascades to child feature and task markdown files with status doc cleanup`() = testScope.runTest {
+        fun `delete cascades to child feature and task markdown files`() = testScope.runTest {
             val projectId = UUID.randomUUID()
             val featureId = UUID.randomUUID()
             val taskId1 = UUID.randomUUID()
@@ -267,9 +264,7 @@ class ExportAwareRepositoryTest {
             advanceUntilIdle()
             coVerify { exportService.onEntityDeleted(taskId1) }
             coVerify { exportService.onEntityDeleted(taskId2) }
-            coVerify { exportService.deleteStatusDoc(featureId) }
             coVerify { exportService.onEntityDeleted(featureId) }
-            coVerify { exportService.deleteStatusDoc(projectId) }
             coVerify { exportService.onEntityDeleted(projectId) }
         }
     }

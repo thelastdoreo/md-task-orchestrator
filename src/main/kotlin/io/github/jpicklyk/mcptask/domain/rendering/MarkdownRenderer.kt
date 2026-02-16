@@ -64,13 +64,14 @@ class MarkdownRenderer(
     }
 
     /**
-     * Renders a feature with its sections as a complete markdown document.
+     * Renders a feature with its sections and child task status table as a complete markdown document.
      *
      * @param feature The feature to render
      * @param sections List of sections associated with the feature (ordered by ordinal)
-     * @return Complete markdown document with frontmatter and content
+     * @param childTasks List of tasks belonging to this feature (for status table)
+     * @return Complete markdown document with frontmatter, content, and task status overview
      */
-    fun renderFeature(feature: Feature, sections: List<Section>): String {
+    fun renderFeature(feature: Feature, sections: List<Section>, childTasks: List<Task> = emptyList()): String {
         return buildString {
             if (options.includeFrontmatter) {
                 append(renderFeatureFrontmatter(feature))
@@ -92,24 +93,30 @@ class MarkdownRenderer(
             // Sections
             sections.sortedBy { it.ordinal }.forEachIndexed { index, section ->
                 append(renderSection(section))
-                // Add consistent spacing between sections (two line endings)
-                // Last section doesn't need extra spacing since trimEnd() removes trailing whitespace
                 if (index < sections.size - 1) {
                     append(options.lineEnding)
                     append(options.lineEnding)
                 }
             }
+
+            // Child task status table
+            if (childTasks.isNotEmpty()) {
+                append(options.lineEnding)
+                append(options.lineEnding)
+                append(renderChildTaskStatus(childTasks))
+            }
         }.trimEnd()
     }
 
     /**
-     * Renders a project with its sections as a complete markdown document.
+     * Renders a project with its sections and child feature status table as a complete markdown document.
      *
      * @param project The project to render
      * @param sections List of sections associated with the project (ordered by ordinal)
-     * @return Complete markdown document with frontmatter and content
+     * @param childFeatures List of features belonging to this project (for status table)
+     * @return Complete markdown document with frontmatter, content, and feature status overview
      */
-    fun renderProject(project: Project, sections: List<Section>): String {
+    fun renderProject(project: Project, sections: List<Section>, childFeatures: List<Feature> = emptyList()): String {
         return buildString {
             if (options.includeFrontmatter) {
                 append(renderProjectFrontmatter(project))
@@ -131,12 +138,17 @@ class MarkdownRenderer(
             // Sections
             sections.sortedBy { it.ordinal }.forEachIndexed { index, section ->
                 append(renderSection(section))
-                // Add consistent spacing between sections (two line endings)
-                // Last section doesn't need extra spacing since trimEnd() removes trailing whitespace
                 if (index < sections.size - 1) {
                     append(options.lineEnding)
                     append(options.lineEnding)
                 }
+            }
+
+            // Child feature status table
+            if (childFeatures.isNotEmpty()) {
+                append(options.lineEnding)
+                append(options.lineEnding)
+                append(renderChildFeatureStatus(childFeatures))
             }
         }.trimEnd()
     }
@@ -155,33 +167,22 @@ class MarkdownRenderer(
     )
     private val priorityOrder = listOf(Priority.HIGH, Priority.MEDIUM, Priority.LOW)
 
-    /**
-     * Renders a feature status overview document listing child tasks.
-     *
-     * Creates sorted tables grouped into Active, Completed, and Cancelled sections.
-     * Completed and Cancelled tables are omitted when empty.
-     *
-     * @param featureName Name of the feature
-     * @param tasks List of tasks belonging to the feature
-     * @return Markdown document with task status overview
-     */
-    fun renderFeatureStatusDoc(featureName: String, tasks: List<Task>): String {
+    /** Renders child task status tables grouped by Active, Completed, and Cancelled. */
+    private fun renderChildTaskStatus(tasks: List<Task>): String {
         val active = tasks.filter { it.status != TaskStatus.COMPLETED && it.status != TaskStatus.CANCELLED && it.status != TaskStatus.DEFERRED }
         val completed = tasks.filter { it.status == TaskStatus.COMPLETED }
         val cancelled = tasks.filter { it.status == TaskStatus.CANCELLED || it.status == TaskStatus.DEFERRED }
 
         return buildString {
-            append("# ")
-            append(featureName)
+            append("## Tasks")
             append(options.lineEnding)
             append(options.lineEnding)
-
             append(renderTaskStatusTable(sortTasks(active)))
 
             if (completed.isNotEmpty()) {
                 append(options.lineEnding)
                 append(options.lineEnding)
-                append("## Completed")
+                append("### Completed")
                 append(options.lineEnding)
                 append(options.lineEnding)
                 append(renderTaskStatusTable(sortTasks(completed)))
@@ -190,41 +191,30 @@ class MarkdownRenderer(
             if (cancelled.isNotEmpty()) {
                 append(options.lineEnding)
                 append(options.lineEnding)
-                append("## Cancelled")
+                append("### Cancelled")
                 append(options.lineEnding)
                 append(options.lineEnding)
                 append(renderTaskStatusTable(sortTasks(cancelled)))
             }
-        }.trimEnd()
+        }
     }
 
-    /**
-     * Renders a project status overview document listing child features.
-     *
-     * Creates sorted tables grouped into Active, Completed, and Archived sections.
-     * Completed and Archived tables are omitted when empty.
-     *
-     * @param projectName Name of the project
-     * @param features List of features belonging to the project
-     * @return Markdown document with feature status overview
-     */
-    fun renderProjectStatusDoc(projectName: String, features: List<Feature>): String {
+    /** Renders child feature status tables grouped by Active, Completed, and Archived. */
+    private fun renderChildFeatureStatus(features: List<Feature>): String {
         val active = features.filter { it.status != FeatureStatus.COMPLETED && it.status != FeatureStatus.ARCHIVED }
         val completed = features.filter { it.status == FeatureStatus.COMPLETED }
         val archived = features.filter { it.status == FeatureStatus.ARCHIVED }
 
         return buildString {
-            append("# ")
-            append(projectName)
+            append("## Features")
             append(options.lineEnding)
             append(options.lineEnding)
-
             append(renderFeatureStatusTable(sortFeatures(active)))
 
             if (completed.isNotEmpty()) {
                 append(options.lineEnding)
                 append(options.lineEnding)
-                append("## Completed")
+                append("### Completed")
                 append(options.lineEnding)
                 append(options.lineEnding)
                 append(renderFeatureStatusTable(sortFeatures(completed)))
@@ -233,12 +223,12 @@ class MarkdownRenderer(
             if (archived.isNotEmpty()) {
                 append(options.lineEnding)
                 append(options.lineEnding)
-                append("## Archived")
+                append("### Archived")
                 append(options.lineEnding)
                 append(options.lineEnding)
                 append(renderFeatureStatusTable(sortFeatures(archived)))
             }
-        }.trimEnd()
+        }
     }
 
     private fun sortTasks(tasks: List<Task>): List<Task> {
@@ -273,9 +263,11 @@ class MarkdownRenderer(
                 append(" | ")
                 append(task.complexity)
                 append(" | ")
-                append("[[")
+                append("[")
                 append(task.title)
-                append("]]")
+                append("](")
+                append(encodeLink(sanitizeLinkPath(task.title)))
+                append(".md)")
                 append(" |")
             }
         }
@@ -293,9 +285,11 @@ class MarkdownRenderer(
                 append(" | ")
                 append(formatStatus(feature.priority.name))
                 append(" | ")
-                append("[[")
+                append("[")
                 append(feature.name)
-                append("/_feature]]")
+                append("](")
+                append(encodeLink(sanitizeLinkPath(feature.name)))
+                append("/_feature.md)")
                 append(" |")
             }
         }
@@ -305,6 +299,16 @@ class MarkdownRenderer(
         return enumName.split('_').joinToString(" ") { word ->
             word.lowercase().replaceFirstChar { it.uppercase() }
         }
+    }
+
+    /** Sanitize a name for use in link paths, matching FilePathResolver's sanitization. */
+    private fun sanitizeLinkPath(name: String): String {
+        return name.replace(Regex("[/\\\\:*?\"<>|]"), "").trim('.', ' ')
+    }
+
+    /** Encode spaces in a link path for markdown link compatibility. */
+    private fun encodeLink(path: String): String {
+        return path.replace(" ", "%20")
     }
 
     /**

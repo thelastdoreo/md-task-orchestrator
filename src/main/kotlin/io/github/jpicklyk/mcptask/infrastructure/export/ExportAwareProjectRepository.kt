@@ -78,15 +78,13 @@ class ExportAwareProjectRepository(
         if (result is Result.Success && result.data) {
             exportScope.launch {
                 try {
-                    // Delete child task files, feature status docs, features, project status doc, project
+                    // Delete child task files, feature files, then project file
                     for (taskId in childTaskIds) {
                         exportService.onEntityDeleted(taskId)
                     }
                     for (featureId in childFeatureIds) {
-                        exportService.deleteStatusDoc(featureId)
                         exportService.onEntityDeleted(featureId)
                     }
-                    exportService.deleteStatusDoc(id)
                     exportService.onEntityDeleted(id)
                 } catch (e: Exception) {
                     logger.warn("Failed to handle project deletion export for {}: {}", id, e.message)

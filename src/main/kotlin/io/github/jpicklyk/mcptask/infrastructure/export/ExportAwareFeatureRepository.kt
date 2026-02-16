@@ -65,15 +65,14 @@ class ExportAwareFeatureRepository(
         if (result is Result.Success && result.data) {
             exportScope.launch {
                 try {
-                    // Delete child task files, then feature _status.md, then feature
+                    // Delete child task files, then feature file
                     for (taskId in childTaskIds) {
                         exportService.onEntityDeleted(taskId)
                     }
-                    exportService.deleteStatusDoc(id)
                     exportService.onEntityDeleted(id)
-                    // Notify parent project status doc that feature was removed
+                    // Re-export parent project (updates embedded status table)
                     if (feature?.projectId != null) {
-                        exportService.exportProjectStatusDoc(feature.projectId)
+                        exportService.exportProject(feature.projectId)
                     }
                 } catch (e: Exception) {
                     logger.warn("Failed to handle feature deletion export for {}: {}", id, e.message)
@@ -87,9 +86,9 @@ class ExportAwareFeatureRepository(
         exportScope.launch {
             try {
                 exportService.exportFeature(feature.id)
-                // Notify parent project status doc
+                // Re-export parent project (updates embedded status table)
                 if (feature.projectId != null) {
-                    exportService.exportProjectStatusDoc(feature.projectId)
+                    exportService.exportProject(feature.projectId)
                 }
             } catch (e: Exception) {
                 logger.warn("Failed to export feature {}: {}", feature.id, e.message)

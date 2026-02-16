@@ -55,7 +55,7 @@ class ExportAwareTaskRepository(
                     exportService.onEntityDeleted(id)
                     // Notify parent status docs that a child was removed
                     if (task != null) {
-                        exportService.notifyParentStatusDocs(task.featureId, task.projectId)
+                        exportService.notifyParentExports(task.featureId, task.projectId)
                     }
                 } catch (e: Exception) {
                     logger.warn("Failed to handle task deletion export for {}: {}", id, e.message)
@@ -69,7 +69,7 @@ class ExportAwareTaskRepository(
         exportScope.launch {
             try {
                 exportService.exportTask(task.id)
-                exportService.notifyParentStatusDocs(task.featureId, task.projectId)
+                exportService.notifyParentExports(task.featureId, task.projectId)
             } catch (e: Exception) {
                 logger.warn("Failed to export task {}: {}", task.id, e.message)
             }
