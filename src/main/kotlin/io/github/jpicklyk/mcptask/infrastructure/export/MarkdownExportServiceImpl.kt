@@ -253,18 +253,13 @@ class MarkdownExportServiceImpl(
 
     override suspend fun exportFeatureStatusDoc(featureId: UUID) {
         try {
-            logger.info("exportFeatureStatusDoc called for feature {}", featureId)
             // Load feature
             val featureResult = repositoryProvider.featureRepository().getById(featureId)
-            if (featureResult !is Result.Success) {
-                logger.warn("exportFeatureStatusDoc: could not load feature {}", featureId)
-                return
-            }
+            if (featureResult !is Result.Success) return
             val feature = featureResult.data
 
             // Load child tasks
             val tasks = repositoryProvider.taskRepository().findByFeatureId(featureId)
-            logger.info("exportFeatureStatusDoc: loaded {} tasks for feature {}", tasks.size, featureId)
 
             // Resolve parent name for path
             var projectName: String? = null
@@ -276,26 +271,20 @@ class MarkdownExportServiceImpl(
             }
 
             val relativePath = filePathResolver.resolveFeatureStatusPath(feature.name, projectName)
-            logger.info("exportFeatureStatusDoc: resolved path = {}", relativePath)
             val markdown = markdownRenderer.renderFeatureStatusDoc(feature.name, tasks)
-            logger.info("exportFeatureStatusDoc: rendered markdown ({} chars)", markdown.length)
             writeMarkdownFile(relativePath, markdown)
 
-            logger.info("Successfully exported feature status doc to {}", relativePath)
+            logger.debug("Exported feature status doc to {}", relativePath)
         } catch (e: Exception) {
-            logger.error("Failed to export feature status doc $featureId: ${e.message}", e)
+            logger.warn("Failed to export feature status doc $featureId: ${e.message}", e)
         }
     }
 
     override suspend fun exportProjectStatusDoc(projectId: UUID) {
         try {
-            logger.info("exportProjectStatusDoc called for project {}", projectId)
             // Load project
             val projectResult = repositoryProvider.projectRepository().getById(projectId)
-            if (projectResult !is Result.Success) {
-                logger.warn("exportProjectStatusDoc: could not load project {}", projectId)
-                return
-            }
+            if (projectResult !is Result.Success) return
             val project = projectResult.data
 
             // Load child features
@@ -306,11 +295,10 @@ class MarkdownExportServiceImpl(
             }
 
             val relativePath = filePathResolver.resolveProjectStatusPath(project.name)
-            logger.info("exportProjectStatusDoc: resolved path = {}, features = {}", relativePath, features.size)
             val markdown = markdownRenderer.renderProjectStatusDoc(project.name, features)
             writeMarkdownFile(relativePath, markdown)
 
-            logger.info("Successfully exported project status doc to {}", relativePath)
+            logger.debug("Exported project status doc to {}", relativePath)
         } catch (e: Exception) {
             logger.error("Failed to export project status doc $projectId: ${e.message}", e)
         }

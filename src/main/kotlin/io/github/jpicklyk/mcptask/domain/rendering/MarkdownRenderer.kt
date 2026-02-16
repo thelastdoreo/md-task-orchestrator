@@ -295,9 +295,7 @@ class MarkdownRenderer(
                 append(" | ")
                 append("[[")
                 append(feature.name)
-                append("/_feature|")
-                append(feature.name)
-                append("]]")
+                append("/_feature]]")
                 append(" |")
             }
         }
