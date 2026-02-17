@@ -308,10 +308,10 @@ class MarkdownRenderer(
     /** Returns the terminal status subfolder name, or null if the status is active. */
     private fun terminalSubfolder(status: String): String? {
         return when (status.uppercase()) {
-            "COMPLETED" -> "Completed"
-            "CANCELLED" -> "Cancelled"
-            "DEFERRED" -> "Deferred"
-            "ARCHIVED" -> "Archived"
+            "COMPLETED" -> "_Completed"
+            "CANCELLED" -> "_Cancelled"
+            "DEFERRED" -> "_Deferred"
+            "ARCHIVED" -> "_Archived"
             else -> null
         }
     }

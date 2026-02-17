@@ -157,10 +157,10 @@ class FilePathResolver {
          */
         fun terminalSubfolder(status: String?): String? {
             return when (status?.uppercase()) {
-                "COMPLETED" -> "Completed"
-                "CANCELLED" -> "Cancelled"
-                "DEFERRED" -> "Deferred"
-                "ARCHIVED" -> "Archived"
+                "COMPLETED" -> "_Completed"
+                "CANCELLED" -> "_Cancelled"
+                "DEFERRED" -> "_Deferred"
+                "ARCHIVED" -> "_Archived"
                 else -> null
             }
         }

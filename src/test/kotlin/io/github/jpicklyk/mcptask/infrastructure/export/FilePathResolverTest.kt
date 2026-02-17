@@ -380,19 +380,19 @@ class FilePathResolverTest {
     @Test
     fun `resolveProjectPath places completed project in Completed subfolder`() {
         val path = resolver.resolveProjectPath("My Project", "COMPLETED")
-        assertEquals("Completed/My Project/_project.md", path)
+        assertEquals("_Completed/My Project/_project.md", path)
     }
 
     @Test
     fun `resolveProjectPath places archived project in Archived subfolder`() {
         val path = resolver.resolveProjectPath("My Project", "ARCHIVED")
-        assertEquals("Archived/My Project/_project.md", path)
+        assertEquals("_Archived/My Project/_project.md", path)
     }
 
     @Test
     fun `resolveProjectPath places cancelled project in Cancelled subfolder`() {
         val path = resolver.resolveProjectPath("My Project", "CANCELLED")
-        assertEquals("Cancelled/My Project/_project.md", path)
+        assertEquals("_Cancelled/My Project/_project.md", path)
     }
 
     @Test
@@ -416,7 +416,7 @@ class FilePathResolverTest {
     @Test
     fun `resolveFeaturePath places completed feature without project in Completed subfolder`() {
         val path = resolver.resolveFeaturePath("My Feature", null, "COMPLETED")
-        assertEquals("Completed/My Feature/_feature.md", path)
+        assertEquals("_Completed/My Feature/_feature.md", path)
     }
 
     @Test
@@ -438,9 +438,9 @@ class FilePathResolverTest {
     }
 
     @Test
-    fun `resolveTaskPath places deferred task in Deferred subfolder`() {
+    fun `resolveTaskPath places deferred task in _Deferred subfolder`() {
         val path = resolver.resolveTaskPath("My Task", "My Feature", "My Project", "DEFERRED")
-        assertEquals("My Project/My Feature/Deferred/My Task.md", path)
+        assertEquals("My Project/My Feature/_Deferred/My Task.md", path)
     }
 
     @Test
@@ -458,15 +458,15 @@ class FilePathResolverTest {
     @Test
     fun `resolveTaskPath places completed orphan task in Completed subfolder`() {
         val path = resolver.resolveTaskPath("My Task", null, null, "COMPLETED")
-        assertEquals("Completed/My Task.md", path)
+        assertEquals("_Completed/My Task.md", path)
     }
 
     @Test
     fun `terminalSubfolder returns correct subfolder for each terminal status`() {
-        assertEquals("Completed", FilePathResolver.terminalSubfolder("COMPLETED"))
-        assertEquals("Cancelled", FilePathResolver.terminalSubfolder("CANCELLED"))
-        assertEquals("Deferred", FilePathResolver.terminalSubfolder("DEFERRED"))
-        assertEquals("Archived", FilePathResolver.terminalSubfolder("ARCHIVED"))
+        assertEquals("_Completed", FilePathResolver.terminalSubfolder("COMPLETED"))
+        assertEquals("_Cancelled", FilePathResolver.terminalSubfolder("CANCELLED"))
+        assertEquals("_Deferred", FilePathResolver.terminalSubfolder("DEFERRED"))
+        assertEquals("_Archived", FilePathResolver.terminalSubfolder("ARCHIVED"))
         assertEquals(null, FilePathResolver.terminalSubfolder("IN_PROGRESS"))
         assertEquals(null, FilePathResolver.terminalSubfolder("PENDING"))
         assertEquals(null, FilePathResolver.terminalSubfolder(null))
