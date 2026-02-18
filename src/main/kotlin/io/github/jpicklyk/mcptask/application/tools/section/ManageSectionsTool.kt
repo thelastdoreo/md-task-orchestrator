@@ -46,31 +46,17 @@ class ManageSectionsTool(
 
     override fun shouldUseLocking(): Boolean = true
 
-    override val description: String = """Unified write operations for sections.
+    override val description: String = """Write operations for sections.
 
 Operations: add, update, updateText, updateMetadata, delete, reorder, bulkCreate, bulkUpdate, bulkDelete
 
-Parameters:
-| Field | Type | Required | Description |
-| operation | enum | Yes | add, update, updateText, updateMetadata, delete, reorder, bulkCreate, bulkUpdate, bulkDelete |
-| id | UUID | Varies | Section ID (required for: update, updateText, updateMetadata, delete) |
-| ids | array | Varies | Section IDs (required for: bulkDelete) |
-| entityType | enum | Varies | PROJECT, TASK, FEATURE (required for: add, reorder) |
-| entityId | UUID | Varies | Parent entity ID (required for: add, reorder) |
-| title | string | Varies | Section title (required for: add, bulkCreate) |
-| usageDescription | string | Varies | Usage description (required for: add, bulkCreate) |
-| content | string | Varies | Section content (required for: add, bulkCreate) |
-| contentFormat | enum | No | MARKDOWN, PLAIN_TEXT, JSON, CODE |
-| ordinal | integer | Varies | Display order 0-based (required for: add, bulkCreate) |
-| tags | string | No | Comma-separated tags |
-| oldText | string | Varies | Text to replace (required for: updateText) |
-| newText | string | Varies | Replacement text (required for: updateText) |
-| sectionOrder | string | Varies | Comma-separated section IDs (required for: reorder) |
-| sections | array | Varies | Section objects (required for: bulkCreate, bulkUpdate) |
-
-Usage: Consolidates all section write operations.
-Related: get_sections
-Docs: task-orchestrator://docs/tools/manage-sections
+- add: Requires entityType, entityId, title, usageDescription, content, ordinal.
+- update: Requires id. Updates any provided fields.
+- updateText: Requires id, oldText, newText. Replaces text within section content.
+- updateMetadata: Requires id. Updates title, usageDescription, contentFormat, ordinal, or tags without touching content.
+- delete: Requires id.
+- reorder: Requires entityType, entityId, sectionOrder (comma-separated section IDs).
+- bulkCreate/bulkUpdate/bulkDelete: Requires sections array (create/update) or ids array (delete).
 """
 
     override val parameterSchema: Tool.Input = Tool.Input(

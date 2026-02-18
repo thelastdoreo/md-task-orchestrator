@@ -49,27 +49,9 @@ class QuerySectionsTool(
 
     override fun shouldUseLocking(): Boolean = false // Read-only operations don't need locking
 
-    override val description: String = """Unified read-only section queries with comprehensive filtering.
+    override val description: String = """Query sections for an entity. Returns sections ordered by ordinal.
 
-Parameters:
-| Field | Type | Required | Description |
-| entityType | enum | Yes | PROJECT, FEATURE, or TASK |
-| entityId | UUID | Yes | Entity identifier |
-| includeContent | boolean | No | Include content (default: true, false saves 85-99% tokens) |
-| sectionIds | array | No | Filter to specific section IDs |
-| tags | string | No | Comma-separated tags (returns sections with ANY tag) |
-
-Returns sections ordered by ordinal. Each section includes: id, title, usageDescription,
-contentFormat, ordinal, tags, timestamps. Content included only if includeContent=true.
-
-Usage patterns:
-- Browse structure: includeContent=false (metadata only, huge token savings)
-- Selective loading: Get metadata first, then fetch specific sections with sectionIds
-- Tag filtering: Agent-specific content queries (e.g., tags="requirements,api")
-- Full content: includeContent=true for complete section data
-
-Related: manage_sections (write operations)
-Docs: task-orchestrator://docs/tools/query-sections
+Requires entityType (PROJECT, FEATURE, TASK) and entityId. Use includeContent=false for metadata only. Filter with sectionIds array or comma-separated tags.
 """
 
     override val parameterSchema: Tool.Input = Tool.Input(

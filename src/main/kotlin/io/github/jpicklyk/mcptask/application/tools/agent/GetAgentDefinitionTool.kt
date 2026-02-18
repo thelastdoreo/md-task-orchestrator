@@ -21,32 +21,8 @@ class GetAgentDefinitionTool : BaseToolDefinition() {
 
     override val title: String = "Get AI Agent Definition"
 
-    override val description: String = """Retrieves an AI agent definition file by name. Returns full markdown content with YAML frontmatter containing agent instructions and capabilities.
-
-        Parameters:
-        - agentName (required): Agent name (e.g., 'backend-engineer', 'frontend-developer')
-          - Can include or omit .md extension
-          - Case-sensitive file name matching
-
-        Response includes:
-        - YAML frontmatter with agent metadata (name, description, model, tools)
-        - Agent description and capabilities
-        - Recommended workflows and patterns
-        - Tools and resources for the agent
-
-        Available Agents:
-        - Backend Engineer, Database Engineer, Frontend Developer, Test Engineer, Technical Writer
-        - Feature Architect, Planning Specialist, Feature Manager, Task Manager, Bug Triage Specialist
-
-        Usage notes:
-        - Use task-orchestrator://agents/list resource to see all available agents
-        - Agent files located in .claude/agents/ directory
-        - Run setup_project first to initialize core configuration
-
-        Related tools: recommend_agent, setup_project
-
-        For detailed examples and patterns: task-orchestrator://docs/tools/get-agent-definition
-        """
+    override val description: String = """Retrieve an AI agent definition by name. Requires agentName (e.g., 'backend-engineer'). Returns markdown with YAML frontmatter containing agent instructions and capabilities.
+"""
 
     override val parameterSchema: Tool.Input = Tool.Input(
         properties = JsonObject(

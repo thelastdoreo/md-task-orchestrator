@@ -26,36 +26,8 @@ class SetupProjectTool : BaseToolDefinition() {
 
     override val title: String = "Setup Task Orchestrator Project"
 
-    override val description: String = """Initializes core Task Orchestrator project configuration.
-
-        What This Creates:
-        - `.taskorchestrator/` - Core configuration directory
-        - `.taskorchestrator/config.yaml` - Orchestrator configuration (status progression, validation rules)
-        - `.taskorchestrator/agent-mapping.yaml` - Agent routing configuration
-
-        Configuration Files:
-        - config.yaml: Status workflows, validation rules, quality gates, parallelism settings
-        - agent-mapping.yaml: Maps task tags to appropriate agents (used with Claude Code)
-
-        Parameters: None required
-
-        Usage notes:
-        - Idempotent: Safe to run multiple times (skips existing files)
-        - Won't overwrite user customizations
-        - Returns list of created vs skipped files
-        - AI-agnostic: Works with any MCP client
-
-        When to use:
-        - First time using Task Orchestrator in a project
-        - After cloning a repository without .taskorchestrator/
-        - Restoring default configurations
-
-        After setup:
-        - Edit .taskorchestrator/config.yaml to customize status workflows
-        - Commit .taskorchestrator/ directory for team sharing
-
-        For detailed examples and patterns: task-orchestrator://docs/tools/setup-project
-        """
+    override val description: String = """Initialize Task Orchestrator project configuration. Creates .taskorchestrator/ directory with config.yaml and agent-mapping.yaml. No parameters required. Idempotent - safe to run multiple times.
+"""
 
     override val parameterSchema: Tool.Input = Tool.Input(
         properties = JsonObject(emptyMap()),

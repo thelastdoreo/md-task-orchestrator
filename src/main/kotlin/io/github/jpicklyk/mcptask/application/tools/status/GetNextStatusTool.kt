@@ -33,45 +33,8 @@ class GetNextStatusTool(
 
     override val title: String = "Get Next Status Recommendation"
 
-    override val description: String = """
-        Get intelligent status progression recommendations based on workflow configuration and entity state.
-
-        This read-only tool analyzes the entity and suggests the next status in the workflow. It does NOT change status.
-
-        Analysis considers:
-        - Entity tags to determine active workflow (bug_fix_flow, documentation_flow, default_flow)
-        - Current position in workflow sequence
-        - Prerequisite readiness (summary populated, tasks completed, etc.)
-        - Terminal status blocking (cannot progress from completed/cancelled)
-        - Emergency transitions (blocked, cancelled, archived)
-
-        Required Parameters:
-        - containerId: UUID of task/feature/project to analyze
-        - containerType: "task", "feature", or "project"
-
-        Optional Parameters:
-        - currentStatus: Current status (if not provided, fetched from entity)
-        - tags: Override entity tags for flow determination (uses entity's tags by default)
-
-        Returns:
-        - recommendation: "Ready", "Blocked", or "Terminal"
-        - If Ready: recommendedStatus, activeFlow, flowSequence, currentPosition, matchedTags, reason
-        - If Blocked: currentStatus, blockers, activeFlow, flowSequence, currentPosition
-        - If Terminal: terminalStatus, activeFlow, reason
-
-        Use Cases:
-        - Status Progression Skill ("What's next?" / "Can I complete this?")
-        - AI workflow automation (checking if entity can progress)
-        - UI/dashboard showing next available statuses
-        - Validation before applying status transitions
-
-        To apply recommended status:
-        manage_container(operation="setStatus", containerType="...", id="...", status="[recommendedStatus]")
-
-        Related tools: manage_container (setStatus), query_container
-
-        For detailed examples: task-orchestrator://docs/tools/get-next-status
-    """.trimIndent()
+    override val description: String = """Get status progression recommendation for a container. Read-only - suggests next status but does not change it. Requires containerId and containerType (task, feature, project). Analyzes workflow configuration, prerequisites, and entity tags to return Ready (with recommendedStatus), Blocked (with blockers list), or Terminal.
+"""
 
     override val parameterSchema: Tool.Input = Tool.Input(
         properties = JsonObject(

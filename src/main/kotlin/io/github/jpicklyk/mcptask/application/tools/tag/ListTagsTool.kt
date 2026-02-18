@@ -21,36 +21,8 @@ class ListTagsTool : BaseToolDefinition() {
 
     override val title: String = "List All Tags"
 
-    override val description: String = """Lists all unique tags across all entities with usage counts and entity type breakdown.
-
-        Features:
-        - Shows all tags used across projects, features, tasks, and templates
-        - Usage counts per tag
-        - Entity type breakdown (how many projects/features/tasks/templates use each tag)
-        - Filter by specific entity types
-        - Sort by usage count or alphabetically
-
-        Parameters:
-        - entityTypes (optional): Filter by entity types array (PROJECT, FEATURE, TASK, TEMPLATE)
-        - sortBy (optional): Sort by 'count' (usage count) or 'name' (alphabetically). Default: count
-        - sortDirection (optional): 'asc' (ascending) or 'desc' (descending). Default: desc
-
-        Use Cases:
-        - Tag discovery before searching
-        - Tag cleanup (identify rarely used tags)
-        - Tag standardization (detect variations like "bug" vs "bugs")
-        - Usage analysis (understand common categorization patterns)
-
-        Usage notes:
-        - Default returns all tags sorted by usage count (descending)
-        - Use sortBy="name" for alphabetical view
-        - Filter by entityTypes to see tags for specific entity types only
-        - Use before search_tasks/search_features to discover available tags
-
-        Related tools: get_tag_usage, rename_tag, search_tasks, search_features
-
-        For detailed examples and patterns: task-orchestrator://docs/tools/list-tags
-        """
+    override val description: String = """Lists all unique tags across entities with usage counts and entity type breakdown. Filter by entityTypes array (PROJECT, FEATURE, TASK, TEMPLATE). Sort by count or name, ascending or descending.
+"""
 
     override val parameterSchema: Tool.Input = Tool.Input(
         properties = JsonObject(

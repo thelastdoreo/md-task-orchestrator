@@ -44,25 +44,7 @@ class QueryDependenciesTool(
 
     override fun shouldUseLocking(): Boolean = false // Read-only operations don't need locking
 
-    override val description: String = """Read-only dependency queries with filtering support.
-
-Parameters:
-| Field | Type | Required | Description |
-| taskId | UUID | Yes | Task to query dependencies for |
-| direction | enum | No | incoming, outgoing, all (default: all) |
-| type | enum | No | BLOCKS, IS_BLOCKED_BY, RELATES_TO, all (default: all) |
-| includeTaskInfo | boolean | No | Include task details (title, status) (default: false) |
-
-Directions:
-- incoming: Dependencies TO this task (tasks that block this task)
-- outgoing: Dependencies FROM this task (tasks blocked by this task)
-- all: Both directions
-
-Returns dependency objects with counts breakdown and applied filters.
-
-Usage: Consolidates dependency queries with filtering (read-only).
-Related: manage_dependency
-Docs: task-orchestrator://docs/tools/query-dependencies
+    override val description: String = """Query dependencies for a task. Requires taskId. Filter by direction (incoming, outgoing, all) and type (BLOCKS, IS_BLOCKED_BY, RELATES_TO, all). Use includeTaskInfo=true to get task title and status.
 """
 
     override val parameterSchema: Tool.Input = Tool.Input(

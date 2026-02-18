@@ -53,29 +53,11 @@ class ManageContainerTool(
 
 Operations: create, update, delete, setStatus, bulkUpdate
 
-Parameters:
-| Field | Type | Required | Description |
-| operation | enum | Yes | create, update, delete, setStatus, bulkUpdate |
-| containerType | enum | Yes | project, feature, task |
-| id | UUID | Varies | Container ID (required for: update, delete, setStatus) |
-| ids | array | No | Container IDs (required for: bulkUpdate) |
-| name/title | string | Varies | Name/title (required for: create) |
-| summary | string | No | Brief summary (max 500 chars) |
-| description | string | No | Detailed description |
-| status | enum | No | Container status |
-| priority | enum | No | Priority (feature/task only) |
-| complexity | integer | No | Complexity 1-10 (task only) |
-| projectId | UUID | No | Parent project ID (feature/task) |
-| featureId | UUID | No | Parent feature ID (task only) |
-| templateIds | array | No | Templates to apply (create only) |
-| tags | string | No | Comma-separated tags |
-| deleteSections | boolean | No | Delete sections (default: true) |
-| force | boolean | No | Force delete with dependencies |
-| containers | array | No | Bulk update array (bulkUpdate only) |
-
-Usage: Consolidates create/update/delete/setStatus/bulkUpdate for all container types.
-Related: query_tasks, get_overview
-Docs: task-orchestrator://docs/tools/manage-container
+- create: Requires name (project/feature) or title (task). Supports templateIds to apply templates on creation.
+- update: Requires id. Only specified fields are changed.
+- delete: Requires id. Use force=true to delete with child entities/dependencies.
+- setStatus: Requires id and status. Validates workflow transitions and detects cascade events.
+- bulkUpdate: Requires containers array (max 100) with id + fields to update.
 """
 
     override val parameterSchema: Tool.Input = Tool.Input(

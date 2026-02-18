@@ -48,33 +48,13 @@ class ManageTemplateTool(
 
     override fun shouldUseLocking(): Boolean = true
 
-    override val description: String = """Unified write operations for templates.
+    override val description: String = """Write operations for templates.
 
 Operations: create, update, delete, enable, disable, addSection
 
-Parameters:
-| Field | Type | Required | Description |
-| operation | enum | Yes | create, update, delete, enable, disable, addSection |
-| id | UUID | Varies | Template ID (required for: update, delete, enable, disable, addSection) |
-| name | string | Varies | Template name (required for: create) |
-| description | string | Varies | Template description (required for: create) |
-| targetEntityType | enum | Varies | TASK or FEATURE (required for: create) |
-| isBuiltIn | boolean | No | Built-in template (default: false) |
-| isProtected | boolean | No | Protected from modification (default: false) |
-| isEnabled | boolean | No | Enabled for use (default: true) |
-| createdBy | string | No | Creator identifier |
-| tags | string | No | Comma-separated tags |
-| force | boolean | No | Force delete (default: false) |
-| title | string | Varies | Section title (required for: addSection) |
-| usageDescription | string | Varies | Section usage (required for: addSection) |
-| contentSample | string | Varies | Section content (required for: addSection) |
-| contentFormat | enum | No | MARKDOWN, PLAIN_TEXT, JSON, CODE (default: MARKDOWN) |
-| ordinal | integer | Varies | Section order (required for: addSection) |
-| isRequired | boolean | No | Section required (default: false) |
-
-Usage: Consolidates create/update/delete/enable/disable/addSection for templates.
-Related: list_templates, get_template, apply_template
-Docs: task-orchestrator://docs/tools/manage-template
+- create: Requires name, description, targetEntityType (TASK or FEATURE).
+- update/delete/enable/disable: Requires id.
+- addSection: Requires id, title, usageDescription, contentSample, ordinal.
 """
 
     override val parameterSchema: Tool.Input = Tool.Input(

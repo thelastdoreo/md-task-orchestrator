@@ -20,8 +20,6 @@ import io.github.jpicklyk.mcptask.application.tools.dependency.QueryDependencies
 import io.github.jpicklyk.mcptask.application.tools.section.ManageSectionsTool
 import io.github.jpicklyk.mcptask.application.tools.section.QuerySectionsTool
 import io.github.jpicklyk.mcptask.application.tools.tag.*
-import io.github.jpicklyk.mcptask.application.tools.task.GetNextTaskTool
-import io.github.jpicklyk.mcptask.application.tools.task.GetBlockedTasksTool
 import io.github.jpicklyk.mcptask.application.tools.status.GetNextStatusTool
 import io.github.jpicklyk.mcptask.application.tools.template.ApplyTemplateTool
 import io.github.jpicklyk.mcptask.application.tools.template.ManageTemplateTool
@@ -288,10 +286,6 @@ class McpServer(
             ListTagsTool(),
             GetTagUsageTool(),
             RenameTagTool(),
-
-            // Workflow optimization - Task recommendations and blocking analysis
-            GetNextTaskTool(),
-            GetBlockedTasksTool(),
 
             // Status progression - Intelligent workflow recommendations
             GetNextStatusTool(statusProgressionService),

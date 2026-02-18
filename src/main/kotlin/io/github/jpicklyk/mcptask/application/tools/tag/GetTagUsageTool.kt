@@ -21,34 +21,8 @@ class GetTagUsageTool : BaseToolDefinition() {
 
     override val title: String = "Get Tag Usage"
 
-    override val description: String = """Shows all entities (tasks, features, projects, templates) that use a specific tag. Essential for impact analysis before renaming/removing tags.
-
-        Parameters:
-        - tag (required): Tag to search for (case-insensitive)
-        - entityTypes (optional): Comma-separated list (TASK, FEATURE, PROJECT, TEMPLATE). Default: all types
-
-        Returns entities grouped by type with essential metadata:
-        - TASK: id, title, status, priority, complexity
-        - FEATURE: id, name, status, priority
-        - PROJECT: id, name, status
-        - TEMPLATE: id, name, targetEntityType, isEnabled
-
-        Use Cases:
-        - Impact analysis before renaming ("What would be affected if I rename tag 'api' to 'rest-api'?")
-        - Tag cleanup ("Is this old tag still being used anywhere?")
-        - Finding related work ("Show me everything tagged 'security'")
-        - Understanding tag adoption patterns
-
-        Usage notes:
-        - Case-insensitive tag matching
-        - Queries all entity types in parallel for efficiency
-        - Returns lightweight summaries (no full content)
-        - Use before rename_tag to understand impact
-
-        Related tools: list_tags, rename_tag, search_tasks, search_features
-
-        For detailed examples and patterns: task-orchestrator://docs/tools/get-tag-usage
-        """
+    override val description: String = """Shows all entities using a specific tag. Requires tag (case-insensitive). Optional entityTypes filter (comma-separated: TASK, FEATURE, PROJECT, TEMPLATE). Returns entities grouped by type with minimal metadata.
+"""
 
     override val parameterSchema: Tool.Input = Tool.Input(
         properties = JsonObject(

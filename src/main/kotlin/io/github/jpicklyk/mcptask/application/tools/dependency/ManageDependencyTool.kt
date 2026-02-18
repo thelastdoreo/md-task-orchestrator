@@ -47,38 +47,10 @@ class ManageDependencyTool(
 
     override fun shouldUseLocking(): Boolean = true
 
-    override val description: String = """Unified write operations for task dependencies.
+    override val description: String = """Create or delete task dependencies.
 
-Operations: create, delete
-
-Parameters:
-| Field | Type | Required | Description |
-| operation | enum | Yes | create, delete |
-| id | UUID | Varies | Dependency ID (required for: delete by ID) |
-| fromTaskId | UUID | Varies | Source task ID (required for: create; optional for: delete) |
-| toTaskId | UUID | Varies | Target task ID (required for: create; optional for: delete) |
-| type | enum | No | Dependency type (BLOCKS, IS_BLOCKED_BY, RELATES_TO) |
-| deleteAll | boolean | No | Delete all dependencies for task (delete only, default: false) |
-
-Dependency Types:
-- BLOCKS: Source blocks target (target cannot start until source complete)
-- IS_BLOCKED_BY: Source is blocked by target (inverse of BLOCKS)
-- RELATES_TO: General relationship (no blocking)
-
-Validation (create):
-- Both tasks must exist
-- Prevents circular dependencies (cycle detection)
-- Prevents duplicate dependencies
-- Validates UUID formats
-
-Delete Methods:
-- By dependency ID: Provide 'id' parameter
-- By task relationship: Provide 'fromTaskId' + 'toTaskId' (optional 'type' filter)
-- All for a task: Provide 'fromTaskId' OR 'toTaskId' with 'deleteAll=true'
-
-Usage: Consolidates create/delete for task dependencies with comprehensive validation.
-Related: get_task_dependencies, manage_container, query_tasks
-Docs: task-orchestrator://docs/tools/manage-dependency
+- create: Requires fromTaskId, toTaskId. Type defaults to BLOCKS. Validates both tasks exist and prevents circular dependencies.
+- delete: By id, by fromTaskId+toTaskId pair, or all for a task with deleteAll=true.
 """
 
     override val parameterSchema: Tool.Input = Tool.Input(

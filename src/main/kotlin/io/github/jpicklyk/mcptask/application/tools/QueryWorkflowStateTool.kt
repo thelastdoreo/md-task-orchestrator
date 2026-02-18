@@ -32,27 +32,7 @@ class QueryWorkflowStateTool : BaseToolDefinition() {
     override val name: String = "query_workflow_state"
     override val title: String = "Query Workflow State"
 
-    override val description: String = """Query complete workflow state for a container.
-
-Returns comprehensive workflow information:
-- currentStatus: Current status of the container
-- activeFlow: Active workflow flow based on tags
-- allowedTransitions: List of valid next statuses from config
-- detectedEvents: Cascade events detected for this container
-- prerequisites: Prerequisite validation for each allowed transition
-
-Parameters:
-| Field | Type | Required | Description |
-| containerType | enum | Yes | project, feature, task |
-| id | UUID | Yes | Container ID |
-
-Use before status changes to understand:
-- What transitions are valid
-- What prerequisites need to be met
-- What cascade events will trigger
-
-Related: manage_container (setStatus), get_next_status
-Docs: task-orchestrator://docs/tools/query-workflow-state
+    override val description: String = """Query complete workflow state for a container. Requires containerType (project, feature, task) and id. Returns currentStatus, activeFlow, allowedTransitions, detectedEvents, and prerequisite validation.
 """
 
     override val outputSchema: Tool.Output = Tool.Output(

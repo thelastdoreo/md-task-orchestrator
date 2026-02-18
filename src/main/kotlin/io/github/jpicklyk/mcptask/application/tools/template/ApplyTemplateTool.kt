@@ -72,34 +72,8 @@ class ApplyTemplateTool(
         )
     )
 
-    override val description: String = """Applies one or more templates to a task or feature, creating sections based on template definitions.
-
-        Parameters:
-        - templateIds (required): Array of template UUIDs (use single-item array for one template)
-        - entityType (required): TASK or FEATURE
-        - entityId (required): Task or feature UUID
-
-        Template Application:
-        - Templates applied in array order
-        - Later templates' sections appear after earlier ones
-        - Each template creates its defined sections with sample content
-        - Section ordinals maintain sequence across multiple templates
-
-        Recommended Combinations:
-        - Development Task: Technical Approach + Task Implementation + Testing Strategy
-        - Bug Fix: Bug Investigation + Technical Approach + Definition of Done
-        - Feature Planning: Requirements + Context & Background + Testing Strategy
-
-        Usage notes:
-        - PREFER applying templates during create_task/create_feature (more efficient)
-        - Apply multiple templates in one call rather than separate calls
-        - Templates must match entity type (TASK templates for tasks, FEATURE templates for features)
-        - Use list_templates to discover available templates
-
-        Related tools: create_task, create_feature, list_templates, get_template
-
-        For detailed examples and patterns: task-orchestrator://docs/tools/apply-template
-    """
+    override val description: String = """Applies one or more templates to a task or feature, creating sections from template definitions. Requires templateIds array, entityType (TASK or FEATURE), and entityId. Templates applied in array order. Prefer applying via templateIds during create in manage_container.
+"""
 
     override val parameterSchema: Tool.Input = Tool.Input(
         properties = JsonObject(

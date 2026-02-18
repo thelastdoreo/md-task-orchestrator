@@ -46,80 +46,12 @@ class QueryContainerTool(
 
     override val description: String = """Unified read operations for containers (project, feature, task).
 
-Operations: get, search, export, overview (global or scoped)
+Operations: get, search, export, overview
 
-The overview operation supports both global (all entities) and scoped (specific entity with hierarchy) modes.
-Scoped overview provides 85-90% token reduction vs get with sections, ideal for "show details" queries.
-
-Parameters:
-| Field | Type | Required | Description |
-| operation | enum | Yes | get, search, export, overview |
-| containerType | enum | Yes | project, feature, task |
-| id | UUID | Varies | Container ID (required for: get, export; optional for: overview) |
-| query | string | No | Search text query (search only) |
-| status | string | No | Filter by status (supports multi-value: "pending,in-progress" or negation: "!completed") |
-| priority | string | No | Filter by priority (feature/task only, supports multi-value: "high,medium" or negation: "!low") |
-| tags | string | No | Comma-separated tags filter |
-| projectId | UUID | No | Filter by project (feature/task) |
-| featureId | UUID | No | Filter by feature (task only) |
-| limit | integer | No | Max results (default: 20) |
-| includeSections | boolean | No | Include sections (get only, default: false) |
-| summaryLength | integer | No | Summary truncation (overview only, 0-200) |
-
-Overview Operation:
-- Without id: Global overview (all containers of specified type)
-  - Returns array of all entities with minimal fields
-  - Useful for: "Show me all features", "List all projects"
-
-- With id: Scoped overview (hierarchical view of specific container)
-  - Project: Returns project metadata + features array + task counts
-  - Feature: Returns feature metadata + tasks array + task counts
-  - Task: Returns task metadata + dependencies (blocking/blockedBy)
-  - Token efficient: No section content, minimal child fields
-  - Useful for: "Show me details on Feature X", "What's the status of Project Y?"
-
-Token Efficiency:
-- Scoped overview provides 85-90% token reduction vs get with includeSections=true
-- Example: Feature with 10 sections + 20 tasks: 18,500 → 1,200 tokens (91% reduction)
-- Best for "show details" queries without needing full section content
-
-Filter Syntax Examples:
-- Single value: status="pending"
-- Multi-value (OR): status="pending,in-progress" (matches pending OR in-progress)
-- Negation: status="!completed" (matches anything EXCEPT completed)
-- Multi-negation: status="!completed,!cancelled" (matches anything EXCEPT completed or cancelled)
-- Priority filters: priority="high,medium" or priority="!low"
-
-Search results return minimal data (89% token reduction):
-- Tasks: id, title, status, priority, complexity, featureId (~30 tokens vs ~280 full object)
-- Features: id, name, status, priority, projectId
-- Projects: id, name, status
-
-Get operations (feature/project) ALWAYS include taskCounts (99% token reduction):
-- taskCounts.total: Total number of tasks
-- taskCounts.byStatus: Status breakdown (e.g., {"completed": 25, "in-progress": 15, "pending": 10})
-- This avoids fetching all tasks just to count statuses (14,400 → 100 tokens for 50 tasks)
-
-Usage Examples:
-
-# Global overview - all features
-query_container(operation="overview", containerType="feature")
-→ Returns array of all features with minimal fields
-
-# Scoped overview - specific feature with tasks
-query_container(operation="overview", containerType="feature", id="uuid")
-→ Returns feature metadata + tasks array + task counts (no sections)
-
-# Compare with get operation:
-query_container(operation="get", containerType="feature", id="uuid", includeSections=true)
-→ Returns feature + full section content (18k+ tokens)
-
-query_container(operation="overview", containerType="feature", id="uuid")
-→ Returns feature + task list (1.2k tokens, 91% reduction)
-
-Usage: Consolidates get/search/export/overview for all container types (read-only).
-Related: manage_container
-Docs: task-orchestrator://docs/tools/query-container
+- get: Retrieve by ID. Use includeSections=true for section content. Always includes taskCounts for project/feature.
+- search: Filter by status, priority, tags, query text, projectId, featureId. Status supports multi-value ("pending,in-progress") and negation ("!completed").
+- export: Render as markdown by ID.
+- overview: Without id returns all entities (minimal fields). With id returns hierarchical view (project+features, feature+tasks, task+dependencies) without section content.
 """
 
     override val parameterSchema: Tool.Input = Tool.Input(

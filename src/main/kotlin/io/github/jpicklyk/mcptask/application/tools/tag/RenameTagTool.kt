@@ -21,43 +21,8 @@ class RenameTagTool : BaseToolDefinition() {
 
     override val title: String = "Rename Tag"
 
-    override val description: String = """Renames a tag across all entities (tasks, features, projects, templates) in a single operation. Essential for maintaining consistent tag taxonomy.
-
-        Parameters:
-        - oldTag (required): Tag to rename (case-insensitive matching)
-        - newTag (required): New tag name
-        - entityTypes (optional): Comma-separated list (TASK, FEATURE, PROJECT, TEMPLATE). Default: all types
-        - dryRun (optional): Preview changes without modifying data. Default: false
-
-        Behavior:
-        - Case-insensitive search for oldTag
-        - Exact replacement with newTag (preserves newTag case)
-        - If entity already has newTag, oldTag is simply removed (prevents duplicates)
-        - Tags remain in original order
-        - Other tags unaffected
-
-        Use Cases:
-        - Typo correction ("authentcation" → "authentication")
-        - Standardization ("API" → "api")
-        - Tag consolidation (merge "rest-api" and "restapi" into "api")
-        - Convention changes ("bug-fix" → "bugfix")
-
-        Returns Statistics:
-        - totalUpdated: Total entities modified
-        - byEntityType: Breakdown by entity type
-        - failedUpdates: Count of failures (if any)
-        - dryRun: Whether this was a preview
-
-        Usage notes:
-        - Use get_tag_usage first to see impact
-        - Use dryRun=true to preview changes
-        - Continues even if individual updates fail
-        - Reports detailed statistics
-
-        Related tools: get_tag_usage, list_tags
-
-        For detailed examples and patterns: task-orchestrator://docs/tools/rename-tag
-        """
+    override val description: String = """Renames a tag across all entities. Requires oldTag and newTag. Optional entityTypes filter and dryRun=true to preview. Case-insensitive matching, prevents duplicates. Returns update statistics.
+"""
 
     override val parameterSchema: Tool.Input = Tool.Input(
         properties = JsonObject(

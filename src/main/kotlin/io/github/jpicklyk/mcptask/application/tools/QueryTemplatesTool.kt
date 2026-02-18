@@ -45,27 +45,7 @@ class QueryTemplatesTool(
 
     override fun shouldUseLocking(): Boolean = false // Read-only operations don't need locking
 
-    override val description: String = """Unified read operations for templates.
-
-Operations: get, list
-
-Parameters:
-| Field | Type | Required | Description |
-| operation | enum | Yes | get, list |
-| id | UUID | get only | Template ID |
-| includeSections | boolean | get only | Include sections (default: false) |
-| targetEntityType | enum | list only | TASK or FEATURE |
-| isBuiltIn | boolean | list only | Filter built-in templates |
-| isEnabled | boolean | list only | Filter enabled templates |
-| tags | string | list only | Comma-separated tags |
-
-Operations:
-- get: Retrieve single template by ID with optional sections
-- list: List templates with optional filtering
-
-Usage: Consolidates get/list for templates (read-only).
-Related: manage_templates (write operations)
-Docs: task-orchestrator://docs/tools/query-templates
+    override val description: String = """Read operations for templates. Operations: get (by ID, use includeSections=true for section content) and list (filter by targetEntityType, isBuiltIn, isEnabled, tags).
 """
 
     override val parameterSchema: Tool.Input = Tool.Input(
