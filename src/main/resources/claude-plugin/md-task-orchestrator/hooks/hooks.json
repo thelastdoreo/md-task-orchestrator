@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node ${CLAUDE_PLUGIN_ROOT}/hooks-handlers/session-start.js"
+            "command": "bash -c 'ROOT=\"${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/md-task-orchestrator}\"; node \"$ROOT/hooks-handlers/session-start.js\"'"
           }
         ]
       }
